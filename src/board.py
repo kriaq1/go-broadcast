@@ -110,6 +110,9 @@ class Board:
 
     def __len__(self):
         return self.size()
+      
+    def copy(self):
+        return Board(self.size(), self._board)
 
     def to_numpy(self):
         return self._board.copy()
