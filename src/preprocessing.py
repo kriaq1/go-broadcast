@@ -62,7 +62,7 @@ def rotate(image, angle=45, crop=False):
 
 def shift(image, dx, dy):
     matrix = np.float32([[1, 0, dx], [0, 1, dy]])
-    return cv2.warpAffine(image, matrix, image.shape[:2])
+    return cv2.warpAffine(image, matrix, (image.shape[1], image.shape[0]))
 
 
 def normalize_minmax(image):
