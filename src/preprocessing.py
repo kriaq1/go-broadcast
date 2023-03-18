@@ -48,15 +48,14 @@ def remove_shadows(image):
 
 def rotate(image, angle=45, crop=False):
     height, width = image.shape[0], image.shape[1]
-    new_height, new_width = height, width
     matrix = cv2.getRotationMatrix2D((width / 2, height / 2), angle, 1.0)
     if not crop:
-        cos = np.abs(matrix[0][0])
-        sin = np.abs(matrix[0][1])
-        new_width = int(height * sin + width * cos)
-        new_height = int(height * cos + width * sin)
-        matrix[0][2] += (new_width / 2) - width / 2
-        matrix[1][2] += (new_height / 2) - height / 2
+        diag1 = np.abs(matrix @ [width - 1, height - 1, 0])
+        diag2 = np.abs(matrix @ [width - 1, 1 - height, 0])
+        new_width = int(max(diag2[0], diag1[0]))
+        new_height = int(max(diag2[1], diag1[1]))
+        matrix = np.float32([[1, 0, (new_width - width) / 2], [0, 1, (new_height - height) / 2]])
+        matrix = cv2.getRotationMatrix2D((new_width / 2, new_height / 2), angle, 1.0) @ np.vstack([matrix, [0, 0, 1]])
     return cv2.warpAffine(image, matrix, (new_width, new_height))
 
 
