@@ -17,5 +17,7 @@ def preprocess_image(image_path='PreprocessingData/1.jpg', save_path='Preprocess
 
     cv2.imwrite(save_path + "5.rotate" + '.jpg', preprocess.rotate(image))
 
+    cv2.imwrite(save_path + "6.shift" + '.jpg', preprocess.shift(image, -250, 250))
+
 
 preprocess_image()
