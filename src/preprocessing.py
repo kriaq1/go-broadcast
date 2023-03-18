@@ -53,8 +53,8 @@ def rotate(image, angle=45, crop=False):
     if not crop:
         cos = np.abs(matrix[0][0])
         sin = np.abs(matrix[0][1])
-        new_height = int(height * sin + width * cos)
-        new_width = int(height * cos + width * sin)
+        new_width = int(height * sin + width * cos)
+        new_height = int(height * cos + width * sin)
         matrix[0][2] += (new_width / 2) - width / 2
         matrix[1][2] += (new_height / 2) - height / 2
     return cv2.warpAffine(image, matrix, (new_width, new_height))
