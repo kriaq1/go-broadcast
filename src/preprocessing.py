@@ -61,4 +61,4 @@ def rotate(image, angle=45, crop=False):
 
 
 def normalize_minmax(image):
-    cv2.normalize(image, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    return cv2.normalize(image, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
