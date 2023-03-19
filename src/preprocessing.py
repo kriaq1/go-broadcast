@@ -46,22 +46,34 @@ def remove_shadows(image):
     return result_norm
 
 
-def rotate(image, angle=45, crop=False):
+def rotate(image, angle=45, crop=False, need_matrix=False):
     height, width = image.shape[0], image.shape[1]
+    new_height, new_width = height, width
     matrix = cv2.getRotationMatrix2D((width / 2, height / 2), angle, 1.0)
     if not crop:
-        diag1 = np.abs(matrix @ [width - 1, height - 1, 0])
-        diag2 = np.abs(matrix @ [width - 1, 1 - height, 0])
-        new_width = int(max(diag2[0], diag1[0]))
-        new_height = int(max(diag2[1], diag1[1]))
-        matrix = np.float32([[1, 0, (new_width - width) / 2], [0, 1, (new_height - height) / 2]])
-        matrix = cv2.getRotationMatrix2D((new_width / 2, new_height / 2), angle, 1.0) @ np.vstack([matrix, [0, 0, 1]])
+        cos = np.abs(matrix[0][0])
+        sin = np.abs(matrix[0][1])
+        new_width = int(height * sin + width * cos)
+        new_height = int(height * cos + width * sin)
+        matrix[0][2] += (new_width / 2) - width / 2
+        matrix[1][2] += (new_height / 2) - height / 2
+    if need_matrix:
+        return cv2.warpAffine(image, matrix, (new_width, new_height)), matrix
     return cv2.warpAffine(image, matrix, (new_width, new_height))
 
 
 def shift(image, dx, dy):
     matrix = np.float32([[1, 0, dx], [0, 1, dy]])
     return cv2.warpAffine(image, matrix, (image.shape[1], image.shape[0]))
+
+
+def canny(image, a=None, b=None, c=5, sigma=0.5):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (c, c), 0)
+    if a is None or b is None:
+        thresh, _ = cv2.threshold(blur, 0, 255, cv2.THRESH_OTSU)
+        a, b = (1 - sigma) * thresh, (1 + sigma) * thresh
+    return cv2.Canny(blur, a, b)
 
 
 def normalize_minmax(image):
