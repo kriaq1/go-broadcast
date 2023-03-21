@@ -2,12 +2,12 @@ import src.preprocessing as preprocess
 import cv2
 
 
-def preprocess_image(image_path='PreprocessingData/1.jpg', save_path='PreprocessingData/'):
+def preprocess_image(image_path='preprocessing_data/1.jpg', save_path='preprocessing_data/'):
     image = cv2.imread(image_path)
 
     cv2.imwrite(save_path + "6.rotate" + '.jpg', preprocess.rotate(image))
 
-    image = preprocess.padding(image)
+    image = preprocess.padding(image, 1024)
 
     cv2.imwrite(save_path + "1.thresholding" + '.jpg', preprocess.thresholding(image, 125))
 
@@ -22,4 +22,5 @@ def preprocess_image(image_path='PreprocessingData/1.jpg', save_path='Preprocess
     cv2.imwrite(save_path + "7.shift" + '.jpg', preprocess.shift(image, -250, 250))
 
 
-preprocess_image()
+if __name__ == '__main__':
+    preprocess_image()
