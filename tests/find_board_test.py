@@ -5,8 +5,8 @@ import cv2
 import torch
 import numpy as np
 
-from src.find_board import BoardSearch
-from src.find_board.utils.preprocess import load_image
+from src.find_board_nn import BoardSearch
+from src.find_board_nn import load_image
 
 
 def plot_image_and_mask(image, mask, points, save_name=None):

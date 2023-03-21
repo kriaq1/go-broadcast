@@ -1,9 +1,9 @@
 import torch
+import torch.nn as nn
 import segmentation_models_pytorch as smp
-import pytorch_lightning as pl
 
 
-class Model(pl.LightningModule):
+class Model(nn.Module):
     def __init__(self, in_channels, out_classes, **kwargs):
         self.in_channels = in_channels
         self.out_classes = out_classes
