@@ -3,7 +3,6 @@ pytest
 opencv-python
 plotly
 torch
-pytorch-lightning
 segmentation-models-pytorch
 sympy
 matplotlib
