@@ -16,7 +16,7 @@ def poly_dp_search(contour):
     return approx
 
 
-def approximate_polygon_poly_db(mask):
+def approximate_polygon_poly_dp(mask):
     assert mask.ndim == 2
     mask = np.array(mask, dtype=np.uint8)
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
