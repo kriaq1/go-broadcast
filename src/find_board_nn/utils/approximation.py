@@ -3,16 +3,18 @@ import numpy as np
 import math
 
 
-def approximate_polygon(mask):
-    return approximate_polygon_hull(mask)
+def approximate_polygon(mask, hull=True):
+    if hull:
+        return approximate_polygon_hull(mask)
+    return approximate_polygon_poly_dp(mask)
 
 
 def poly_dp_search(contour):
-    coefficient = 0.0001
+    coefficient = 0.0003
     approx = None
     while approx is None or len(approx) > 4:
         approx = cv2.approxPolyDP(contour, coefficient * cv2.arcLength(contour, True), True)
-        coefficient += 0.0001
+        coefficient += 0.0003
     return approx
 
 

@@ -1,5 +1,5 @@
 import torch
-from ..find_board_nn import segmentation_model
+from . import segmentation_model
 from .utils import approximation as approximation
 
 
