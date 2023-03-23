@@ -40,7 +40,7 @@ def line_intersection(line1, line2):
 
     div = det(xdiff, ydiff)
     if div == 0:
-        return -1, -1
+        return None, None
 
     d = (det(*line1), det(*line2))
     x = det(d, xdiff) / div
@@ -80,7 +80,7 @@ def approximate_polygon_hull(mask, n: int = 4) -> list[(int, int)]:
             if angle1 + angle2 <= math.pi:
                 continue
             intersect = line_intersection((close_edge_point_1, edge_point_1), (edge_point_2, close_edge_point_2))
-            if intersect[0] < 0 or intersect[0] > 1024 or intersect[1] < 0 or intersect[1] > 1024:
+            if intersect[0] is None:
                 continue
             area = get_triangle_area(edge_point_1, intersect, edge_point_2)
             if best is None or best[0] > area:

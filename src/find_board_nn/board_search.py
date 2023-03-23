@@ -1,6 +1,7 @@
 import torch
+import numpy as np
 from . import segmentation_model
-from .utils import approximation as approximation
+from .utils import approximation
 
 
 class BoardSearch:
@@ -19,4 +20,6 @@ class BoardSearch:
     @staticmethod
     def find_quadrilateral(mask):
         assert mask.ndim == 2
-        return approximation.approximate_polygon(mask)
+        coordinates = np.array(approximation.approximate_polygon(mask))
+        coordinates = np.roll(coordinates, -np.argmin(np.sum(coordinates ** 2, axis=1)), axis=0)
+        return coordinates
