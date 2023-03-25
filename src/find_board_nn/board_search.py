@@ -20,6 +20,6 @@ class BoardSearch:
     @staticmethod
     def find_quadrilateral(mask):
         assert mask.ndim == 2
-        coordinates = np.array(approximation.approximate_polygon(mask))
+        coordinates = np.array(approximation.approximate_polygon(mask))[::-1]
         coordinates = np.roll(coordinates, -np.argmin(np.sum(coordinates ** 2, axis=1)), axis=0)
         return coordinates
