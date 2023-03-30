@@ -1,4 +1,5 @@
 import numpy as np
+from sys import stdout
 
 
 # board[x][y] == -1 - black color, 1 - white color, 0 - empty
@@ -92,7 +93,7 @@ class Board:
         assert 0 <= y < self.size()
         return x, y
 
-    def print_to_console(self):
+    def print_to_console(self, output=stdout):
         board = self.to_numpy().astype(str)
         for x in reversed(range(self.size())):
             for y in range(self.size()):
@@ -102,15 +103,19 @@ class Board:
                     board[x][y] = 'b'
                 else:
                     board[x][y] = '.'
-            print(chr(ord('a') + x), np.array2string(board[x], formatter={'str_kind': lambda x: x}))
-        print(' ', np.arange(1, self.size() + 1))
+            print(
+                chr(ord('a') + x),
+                np.array2string(board[x], formatter={'str_kind': lambda x: x}),
+                file=output
+            )
+        print(' ', np.arange(1, self.size() + 1), file=output)
 
     def __getitem__(self, key):
         return self._board[key]
 
     def __len__(self):
         return self.size()
-      
+
     def copy(self):
         return Board(self.size(), self._board)
 
