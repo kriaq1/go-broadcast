@@ -7,7 +7,7 @@ class ASCIIDump(API):
     A basic API that represents dumping board
     state into file through ASCII pseudographics
     '''
-    __slots__ = [filepath, boards]
+    __slots__ = ["filepath", "boards"]
 
     def __init__(self, path: str):
         self.filepath = path

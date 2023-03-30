@@ -19,21 +19,28 @@ def image_generator(filename):
 
 
 class BoardGenerator:
-    __slots__ = [current_board]
+    __slots__ = ["current_board", "countdown"]
 
-    def __init__(self):
-        self.current_board = board()
+    def __init__(self, countdown=20):
+        self.current_board = Board()
+        self.countdown = countdown
 
-    def __call__(self, size, sleep_time):
+    def __call__(self, size, sleep_time) -> (Board | None):
+        if self.countdown <= 0:
+            return None
         self.current_board.put_stone(0, 0, 1)
         time.sleep(sleep_time)
+        --self.countdown
         yield self.current_board
+
         self.current_board.put_stone(1, 1, -1)
         time.sleep(sleep_time)
+        --self.countdown
         yield self.current_board
         self.current_board.clear()
         time.sleep(sleep_time)
-        yeild self.current_board
+        --self.countdown
+        yield self.current_board
 
 
 board_generator = BoardGenerator()
