@@ -25,7 +25,7 @@ class BoardGenerator:
         self.current_board = Board()
         self.countdown = countdown
 
-    def __call__(self, size, sleep_time) -> (Board | None):
+    def __call__(self, size, sleep_time=0) -> (Board | None):
         if self.countdown <= 0:
             return None
         self.current_board.put_stone(0, 0, 1)

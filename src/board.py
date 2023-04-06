@@ -147,7 +147,7 @@ class Board:
             )
         print(' ', np.arange(1, self.size() + 1), file=output)
 
-    def make_turn(self, coordinate: ((int, int) | str)):
+    def make_turn(self, coordinate: (tuple[int, int] | str)):
         color = self.current_player.value
         if isinstance(coordinate, str):
             coordinate = self.get_coordinates(coordinate)
@@ -155,13 +155,14 @@ class Board:
         self.put_stone(x, y, color)
         self.current_player = self.current_player.opposite()
 
-    def get_turn(self, next_state: Board) -> (Turn | None):
+    def get_turn(self, next_state) -> (Turn | None):
         for x in range(self.size()):
             for y in range(self.size()):
                 nxt = next_state._board[x][y]
                 cur = self._board[x][y]
                 if cur == 0 and nxt == self.current_player.value:
                     return Turn
+        return None
 
     def __getitem__(self, key):
         return self._board[key]

@@ -17,7 +17,7 @@ class ASCIIDump(API):
         self.boards.append(board)
 
     def broadcast(self):
-        f = open(self.path, "a")
+        f = open(self.filepath, "a")
         print("", file=f)
         for board in self.boards:
             board.print_to_console(f)
