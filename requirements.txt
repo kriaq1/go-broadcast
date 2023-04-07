@@ -4,5 +4,5 @@ opencv-python
 plotly
 torch
 segmentation-models-pytorch
-sympy
 matplotlib
+ultralytics
