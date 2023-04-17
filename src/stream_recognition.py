@@ -1,8 +1,8 @@
 import torch
 import numpy as np
 
-from state_recognition.state_recognition import StateRecognition
-from stream_capture import StreamCapture
+from .state_recognition.state_recognition import StateRecognition
+from .stream_capture import StreamCapture
 
 
 class RecognitionError(Exception):
@@ -21,18 +21,19 @@ class PredictError(RecognitionError):
     pass
 
 
-class Recognition:
+class StreamRecognition:
     def __init__(self,
                  source: StreamCapture,
                  save_path_search: str,
                  save_path_detect: str,
                  device: str, ):
         self.source = source
+        self.seg_threshold = 0.5
         self.conf = 0.4
         self.iou = 0.5
-        self.min_distance = 0
-        self.max_distance = 1
-        self.search_period = 4
+        self.min_distance = 20 / 608
+        self.max_distance = 50 / 608
+        self.search_period = 2
         self.predict_epoch = 0
         try:
             self.state_recognition = StateRecognition(save_path_search, save_path_detect, torch.device(device))
@@ -56,13 +57,15 @@ class Recognition:
 
     def update_parameters(self,
                           source: StreamCapture = None,
-                          search_period: int = 4,
+                          search_period: int = 2,
+                          seg_threshold: float = 0.5,
                           conf: float = 0.4,
                           iou: float = 0.5,
-                          min_distance: float = 0,
-                          max_distance: float = 1):
+                          min_distance: float = 20 / 608,
+                          max_distance: float = 50 / 608):
         if source is not None:
             self.source = source
+        self.seg_threshold = seg_threshold
         self.conf = conf
         self.iou = iou
         self.min_distance = min_distance
