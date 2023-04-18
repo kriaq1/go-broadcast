@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import torch
 from . import points_finding
 from . import grid_updating
 
