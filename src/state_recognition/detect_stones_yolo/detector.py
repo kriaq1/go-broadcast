@@ -18,8 +18,8 @@ class StoneDetector:
                                      max_det=max_det,
                                      line_thickness=1,
                                      show=False,
-                                     hide_labels=False,
-                                     hide_conf=False,
+                                     show_labels=False,
+                                     show_conf=False,
                                      device=device,
                                      mode=mode)
         return results
