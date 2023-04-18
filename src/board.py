@@ -1,15 +1,49 @@
 import numpy as np
+from enum import Enum
+from sys import stdout
+
+
+def GoBoardException(Exception):
+    pass
+
+
+def OccupiedException(GoBoardException):
+    pass
+
+
+def ForbiddenMoveException(GoBoardException):
+    pass
+
+
+def OutOfBoundsException(GoBoardException):
+    pass
+
+
+class Player(Enum):
+    White = 1
+    Black = -1
+
+    def opposite(self):
+        return Player.White if self == Player.Black else Player.Black
+
+
+class Turn:
+    def __init__(self, x: int, y: int, player: Player):
+        self.x = x
+        self.y = y
+        self.player = player
 
 
 # board[x][y] == -1 - black color, 1 - white color, 0 - empty
 class Board:
-    def __init__(self, size=19, array=None):
+    def __init__(self, size=19, array=None, player=Player.White):
         if array is None:
             self._board = np.zeros((size, size), dtype=int)
         else:
             self._board = np.array(array)
             shape = self._board.shape
             assert len(shape) == 2 and shape[0] == shape[1]
+        self.current_player = player
 
     def clear(self, new_size=None):
         if new_size is None:
@@ -19,20 +53,24 @@ class Board:
     def size(self):
         return self._board.shape[0]
 
+    def is_in_bounds(self, x: int, y: int):
+        return 0 <= x < self.size() and 0 <= y < self.size()
+
     # Ставит камень указанного цвета на доску, проверяя на корректность ход и удаляя захваченные камни
     # Не проверяет повторение предыдущей позиции
     def put_stone(self, x, y, color):
-        assert 0 <= x < self.size()
-        assert 0 <= y < self.size()
-        assert self[x][y] == 0, 'The place is occupied'
+        if not is_in_bounds(x, y):
+            raise OutOfBoundsException()
+        if self[x][y] != 0:
+            raise OccupiedException()
 
         color = self.get_color_value(color)
         self[x][y] = color
         self.delete_captured(-color)
-        assert self.check_correct(color), 'Forbidden move'
+        if self.check_correct(color):
+            raise ForbiddenMoveException()
 
-    def get_color_value(self, color):
-        assert isinstance(color, str) or isinstance(color, int)
+    def get_color_value(self, color: (str | int)):
         if type(color) == str:
             color = color.lower()[0]
             assert color == 'b' or color == 'w'
@@ -92,7 +130,7 @@ class Board:
         assert 0 <= y < self.size()
         return x, y
 
-    def print_to_console(self):
+    def print_to_console(self, output=stdout):
         board = self.to_numpy().astype(str)
         for x in reversed(range(self.size())):
             for y in range(self.size()):
@@ -102,15 +140,36 @@ class Board:
                     board[x][y] = 'b'
                 else:
                     board[x][y] = '.'
-            print(chr(ord('a') + x), np.array2string(board[x], formatter={'str_kind': lambda x: x}))
-        print(' ', np.arange(1, self.size() + 1))
+            print(
+                chr(ord('a') + x),
+                np.array2string(board[x], formatter={'str_kind': lambda x: x}),
+                file=output
+            )
+        print(' ', np.arange(1, self.size() + 1), file=output)
+
+    def make_turn(self, coordinate: (tuple[int, int] | str)):
+        color = self.current_player.value
+        if isinstance(coordinate, str):
+            coordinate = self.get_coordinates(coordinate)
+        x, y = coordinate
+        self.put_stone(x, y, color)
+        self.current_player = self.current_player.opposite()
+
+    def get_turn(self, next_state) -> (Turn | None):
+        for x in range(self.size()):
+            for y in range(self.size()):
+                nxt = next_state._board[x][y]
+                cur = self._board[x][y]
+                if cur == 0 and nxt == self.current_player.value:
+                    return Turn
+        return None
 
     def __getitem__(self, key):
         return self._board[key]
 
     def __len__(self):
         return self.size()
-      
+
     def copy(self):
         return Board(self.size(), self._board)
 
