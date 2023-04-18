@@ -29,6 +29,7 @@ class StreamRecognition:
                  device: str, ):
         self.source = source
         self.seg_threshold = 0.5
+        self.quality_coefficient = 0.95
         self.conf = 0.4
         self.iou = 0.5
         self.min_distance = 20 / 608
@@ -48,7 +49,8 @@ class StreamRecognition:
             mode = 'prev'
         try:
             parameters = dict(image=frame, mode=mode, points=points, conf=self.conf, iou=self.iou,
-                              min_distance=self.min_distance, max_distance=self.max_distance)
+                              min_distance=self.min_distance, max_distance=self.max_distance,
+                              segmentation_threshold=self.seg_threshold, quality_coefficient=self.quality_coefficient)
             board, prob, quality = self.state_recognition.get_board(**parameters)
         except Exception:
             raise PredictError
@@ -59,6 +61,7 @@ class StreamRecognition:
                           source: StreamCapture = None,
                           search_period: int = 2,
                           seg_threshold: float = 0.5,
+                          quality_coefficient: float = 0.95,
                           conf: float = 0.4,
                           iou: float = 0.5,
                           min_distance: float = 20 / 608,
@@ -66,6 +69,7 @@ class StreamRecognition:
         if source is not None:
             self.source = source
         self.seg_threshold = seg_threshold
+        self.quality_coefficient = quality_coefficient
         self.conf = conf
         self.iou = iou
         self.min_distance = min_distance
