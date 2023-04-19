@@ -40,7 +40,8 @@ class GameValidation:
         border_zeros_cnt = np.sum(prob[0, :] == 0) + np.sum(prob[self.board_size - 1, :] == 0) + np.sum(
             prob[:, 0] == 0) + np.sum(prob[:, self.board_size - 1] == 0)
         zeros_cnt = np.sum(prob == 0)
-        return border_zeros_cnt <= self.valid_border_zeros_cnt and zeros_cnt <= self.valid_zeros_cnt and self.valid_segm_quality <= quality
+        return border_zeros_cnt <= self.valid_border_zeros_cnt and zeros_cnt <= self.valid_zeros_cnt \
+            and self.valid_segm_quality <= quality
 
     def preprocess_state(self, board: np.ndarray, prob: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         return board, prob
@@ -61,15 +62,10 @@ class GameValidation:
         mask = (prob_state == next_state) & (state == 0) & (next_state != 0) & (
                 prob > self.probability_thresh * len(self.states_buff))
         prob[~mask] = -1
-        # print("argsort=", np.argsort(prob.reshape(-1))[mask.reshape(-1)][::-1])
         for index in np.argsort(prob.reshape(-1))[::-1][:np.sum(mask)]:
             x, y = np.unravel_index(index, prob.shape)
             color = next_state[x][y]
             self.moves_buff.append([(x, y, color, timestamp)])
-            # print(next_state)
-            # print("mask=", mask)
-            # print("prob=", prob / len(self.states_buff))
-            # print(x, y, color, mask[x][y])
             self.board.put_stone(x, y, color)
             break
 
