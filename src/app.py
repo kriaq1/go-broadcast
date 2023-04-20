@@ -4,13 +4,16 @@ from .board import Board, Turn
 from .state_recognition import StateRecognition
 from .api import API
 
+import cv2 as cv
+
 import asyncio
 
 
 def trace(f):
+    return f
     async def wrapper(*args):
         print("Calling", f.__name__)
-        await f(*args)
+        return f(*args)
     return wrapper
 
 
@@ -22,10 +25,53 @@ def loop(f):
     return wrapper
 
 
-class App:
-    __slots__ = ["recognition", "gamelog", "broadcast"]
+class DataLine:
+    def __init__(self, comps: list, producers: list, consumers: list):
+        assert len(comps) == len(producers) + 1
+        assert len(producers) == len(consumers)
+        self.comps = comps
+        self.producers = producers
+        self.consumers = consumers
 
-    def __init__(self, api: list[API], *recognition_args):
+    def run(self):
+        queues = [asyncio.Queue() for i in range(len(self.producers))]
+        ioloop = asyncio.get_event_loop()
+
+        def make_producer(f, comp):
+            async def prod(q):
+                while True:
+                    x = f(comp)
+                    await q.put(x)
+            return prod
+
+        def make_consumer(f, comp):
+            async def cons(q):
+                while True:
+                    x = await q.get()
+                    f(comp, x)
+            return cons
+
+        producers_tasks = [
+            ioloop.create_task(make_producer(prod, comp))
+            for (prod, comp, q)
+            in zip(self.producers, self.comps[:-1], queues)
+        ]
+
+        consumers_tasks = [
+            ioloop.create_task(make_consumer(cons, comp))
+            for (cons, comp, q)
+            in zip(self.consumers, self.comps[1:], queues)
+        ]
+
+        waits = asyncio.wait(producers_tasks + consumers_tasks)
+        ioloop.run_forever(waits)
+
+
+class App:
+    __slots__ = ["source", "recognition", "gamelog", "broadcast"]
+
+    def __init__(self, source: cv.VideoCapture, api: list[API], *recognition_args):
+        self.source = source
         self.gamelog: GameLog = GameLog()
         self.broadcast: Broadcast = Broadcast(api)
         self.recognition = StateRecognition(*recognition_args)
@@ -34,11 +80,14 @@ class App:
         @loop
         @trace
         async def scan(scan_edit_queue):
-            b = await self.recognition.get_board()
+            ret, frame = self.source.read()
+            if not ret:
+                return False
+            b = self.recognition.get_board(frame)
             if not b:
                 return False
             print("scan: got board")
-            await scan_edit_queue.put(b)
+            await scan_edit_queue.put(b[0])
             return True
 
         @loop
