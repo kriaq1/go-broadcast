@@ -1,7 +1,8 @@
-from gamelog import GameLog
-from broadcast import Broadcast
-from board_scanner import BoardScanner
-from api import API
+from .gamelog import GameLog
+from .broadcast import Broadcast
+from .board import Board, Turn
+from .state_recognition import StateRecognition
+from .api import API
 
 import asyncio
 
@@ -21,19 +22,15 @@ def loop(f):
     return wrapper
 
 
-class DataLine:
-    def __init__(self, components: list, queue_type: list):
-        assert len(components) = len(queue_type) + 1
-
 class App:
     __slots__ = ["recognition", "gamelog", "broadcast"]
 
     def __init__(self, api: list[API], *recognition_args):
         self.gamelog: GameLog = GameLog()
         self.broadcast: Broadcast = Broadcast(api)
-        self.recognition = BoardScanner(*recognition_args)
+        self.recognition = StateRecognition(*recognition_args)
 
-    async def start(self):
+    def start(self):
         @loop
         @trace
         async def scan(scan_edit_queue):
@@ -71,16 +68,12 @@ class App:
         sc_ed = asyncio.Queue()
         ed_br = asyncio.Queue()
 
-        br = asyncio.create_task(broadcast(ed_br))
-        ed = asyncio.create_task(edit(sc_ed, ed_br))
-        sc = asyncio.create_task(scan(sc_ed))
+        ioloop = asyncio.get_event_loop()
 
+        br = ioloop.create_task(broadcast(ed_br))
+        ed = ioloop.create_task(edit(sc_ed, ed_br))
+        sc = ioloop.create_task(scan(sc_ed))
 
-def main():
-    from asciiapi import ASCIIDump
-    app = App([ASCIIDump("/tmp/gotest")])
-    asyncio.run(app.start())
-
-
-if __name__ == '__main__':
-    main()
+        wait_tasks = asyncio.wait([br, ed, sc])
+        ioloop.run_until_complete(wait_tasks)
+        ioloop.close()

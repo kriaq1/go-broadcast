@@ -1,4 +1,4 @@
-from board import Turn
+from .board import Turn
 
 
 class API:

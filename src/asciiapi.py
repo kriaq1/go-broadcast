@@ -1,5 +1,5 @@
-from api import API
-from board import Board, Turn
+from .api import API
+from .board import Board, Turn
 import asyncio
 
 
