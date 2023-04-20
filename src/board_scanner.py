@@ -3,5 +3,5 @@ from emulator import board_generator
 
 
 class BoardScanner:
-    def get_board(self) -> (Board | None):
+    async def get_board(self) -> (Board | None):
         return board_generator(100)

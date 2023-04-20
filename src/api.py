@@ -1,8 +1,8 @@
-from board import Board
+from board import Turn
 
 
 class API:
-    def add(self, board: Board):
+    def add(self, turn: Turn):
         raise NotImplementedError()
 
     def broadcast(self):
