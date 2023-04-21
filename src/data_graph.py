@@ -27,6 +27,8 @@ class DataGraph:
                     while True:
                         x = await f(comp)
                         if not x:
+                            await self.queues[(src, dst)].join()
+                            await self.queues[(src, dst)].put(None)
                             return
                         await q.put(x)
                         await asyncio.sleep(0)
@@ -51,11 +53,17 @@ class DataGraph:
             async def consumer(comp, q):
                 if asyncio.iscoroutinefunction(f):
                     while True:
-                        await f(comp, await q.get())
+                        x = await q.get()
+                        if not x:
+                            return
+                        await f(comp, x)
                         q.task_done()
                 else:
                     while True:
-                        f(comp, await q.get())
+                        x = await q.get()
+                        if not x:
+                            return
+                        f(comp, x)
                         q.task_done()
 
             if (src, dst) in self.consumers:
