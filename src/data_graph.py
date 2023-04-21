@@ -20,15 +20,28 @@ class DataGraph:
         self.components[type(comp)] = comp
         return self
 
-    def link_producer(self, src: type, dst: type):
+    def link_producer(self, src: type, dst: type, queue_size: int = 0):
         def linker(f):
             async def producer(comp, q):
-                while True:
-                    await q.put(f(comp))
+                if asyncio.iscoroutinefunction(f):
+                    while True:
+                        x = await f(comp)
+                        if not x:
+                            return
+                        await q.put(x)
+                        await asyncio.sleep(0)
+                else:
+                    while True:
+                        x = f(comp)
+                        if not x:
+                            return
+                        await q.put(f(comp))
+                        await asyncio.sleep(0)
 
             if (src, dst) in self.producers:
                 raise DataGraph.Exception("producer already exists")
             self.producers[(src, dst)] = producer
+            self.queues[(src, dst)] = asyncio.Queue(queue_size)
             return f
 
         return linker
@@ -36,9 +49,14 @@ class DataGraph:
     def link_consumer(self, src: type, dst: type):
         def linker(f):
             async def consumer(comp, q):
-                while True:
-                    f(comp, await q.get())
-                    q.task_done()
+                if asyncio.iscoroutinefunction(f):
+                    while True:
+                        await f(comp, await q.get())
+                        q.task_done()
+                else:
+                    while True:
+                        f(comp, await q.get())
+                        q.task_done()
 
             if (src, dst) in self.consumers:
                 raise DataGraph.Exception("consumer already exists")
@@ -47,19 +65,19 @@ class DataGraph:
 
         return linker
 
-    def run(self):
-        ioloop = asyncio.get_event_loop()
+    async def main(self):
         if {k for k in self.producers} != {k for k in self.consumers}:
             # TODO: list those components
             raise DataGraph.Exception("some components are not linked both ways")
-        self.queues = {k: asyncio.Queue() for k in self.producers.keys()}
-        producers_tasks = [
-            ioloop.create_task(self.producers[k](self.components[k[0]], self.queues[k]))
-            for k in self.producers.keys()
-        ]
         consumer_tasks = [
-            ioloop.create_task(self.consumers[k](self.components[k[1]], self.queues[k]))
+            asyncio.create_task(self.consumers[k](self.components[k[1]], self.queues[k]))
             for k in self.producers.keys()
         ]
-        # waits = asyncio.wait(producers_tasks + consumer_tasks)
-        ioloop.run_forever()
+        producers_tasks = [
+            asyncio.create_task(self.producers[k](self.components[k[0]], self.queues[k]))
+            for k in self.producers.keys()
+        ]
+        await asyncio.wait(consumer_tasks + producers_tasks)
+
+    def run(self):
+        asyncio.run(self.main())
