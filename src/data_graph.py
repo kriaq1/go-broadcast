@@ -37,7 +37,7 @@ class DataGraph:
                         x = f(comp)
                         if not x:
                             return
-                        await q.put(f(comp))
+                        await q.put(x)
                         await asyncio.sleep(0)
 
             if (src, dst) in self.producers:
