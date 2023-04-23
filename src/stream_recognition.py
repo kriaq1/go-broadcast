@@ -26,22 +26,23 @@ class StreamRecognition:
                  source: StreamCapture,
                  save_path_search: str,
                  save_path_detect: str,
-                 device: str, ):
+                 device: str = 'cpu', ):
         self.source = source
         self.seg_threshold = 0.5
-        self.quality_coefficient = 0.95
+        self.quality_coefficient = 0.975
         self.conf = 0.4
         self.iou = 0.5
         self.min_distance = 20 / 608
         self.max_distance = 50 / 608
-        self.search_period = 2
+        self.search_period = 4
         self.predict_epoch = 0
         try:
             self.state_recognition = StateRecognition(save_path_search, save_path_detect, torch.device(device))
         except Exception:
             raise LoadError
 
-    def recognize(self, mode: str = None, points: np.ndarray = None) -> tuple[np.ndarray, np.ndarray, float, float]:
+    def recognize(self, mode: str = None, points: np.ndarray = None) -> tuple[
+        np.ndarray, np.ndarray, float, float, np.ndarray]:
         res, frame, timestamp = self.source.read()
         if not res:
             raise StreamReadError
@@ -55,13 +56,13 @@ class StreamRecognition:
         except Exception:
             raise PredictError
         self.predict_epoch += 1
-        return board, prob, quality, timestamp
+        return board, prob, quality, timestamp, self.state_recognition.coordinates
 
     def update_parameters(self,
                           source: StreamCapture = None,
-                          search_period: int = 2,
+                          search_period: int = 4,
                           seg_threshold: float = 0.5,
-                          quality_coefficient: float = 0.95,
+                          quality_coefficient: float = 0.975,
                           conf: float = 0.4,
                           iou: float = 0.5,
                           min_distance: float = 20 / 608,

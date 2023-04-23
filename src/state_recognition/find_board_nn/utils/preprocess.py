@@ -16,6 +16,7 @@ def preprocess(image, scale=0.5):
     new_weight, new_height = int(scale * weight), int(scale * height)
     assert new_weight > 0 and new_height > 0
     image = cv2.resize(image, (new_weight, new_height), interpolation=cv2.INTER_CUBIC)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image = image.transpose((2, 0, 1))
     if (image > 1).any():
         image = image / 255.0
