@@ -8,7 +8,7 @@ class Model(nn.Module):
         self.in_channels = in_channels
         self.out_classes = out_classes
         arch = 'FPN'
-        encoder_name = 'resnet34'
+        encoder_name = 'resnet18'
 
         super().__init__()
         self.model = smp.create_model(

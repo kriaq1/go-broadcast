@@ -14,23 +14,23 @@ def show_board_state(image, board):
     empty[:, :] = (181, 217, 253)
     coords = np.linspace(28, 580, 19).astype(int)
     for i in range(len(coords)):
-        empty = cv2.line(empty, (coords[0], coords[i]), (coords[-1], coords[i]), (0, 0, 0), thickness=1)
-        empty = cv2.line(empty, (coords[i], coords[0]), (coords[i], coords[-1]), (0, 0, 0), thickness=1)
+        cv2.line(empty, (coords[0], coords[i]), (coords[-1], coords[i]), (0, 0, 0), thickness=1)
+        cv2.line(empty, (coords[i], coords[0]), (coords[i], coords[-1]), (0, 0, 0), thickness=1)
     for i in range(len(coords)):
         for j in range(len(coords)):
             x = coords[i]
             y = coords[j]
             if board[j][i] == 1:
-                empty = cv2.circle(empty, (x, y), radius=12, color=(255, 255, 255), thickness=-1)
+                cv2.circle(empty, (x, y), radius=12, color=(255, 255, 255), thickness=-1)
             if board[j][i] == -1:
-                empty = cv2.circle(empty, (x, y), radius=12, color=(0, 0, 0), thickness=-1)
+                cv2.circle(empty, (x, y), radius=12, color=(0, 0, 0), thickness=-1)
     cv2.imshow('board', empty)
     cv2.waitKey()
 
 
 if __name__ == '__main__':
-    save_path_search = '../src/state_recognition/model_saves/segmentation.pth'
-    save_path_detect = '../src/state_recognition/model_saves/yolo8s.pt'
+    save_path_search = '../src/state_recognition/model_saves/segmentation18.pth'
+    save_path_detect = '../src/state_recognition/model_saves/yolo8n.pt'
     video_path = 'video/1.mp4'
 
     device = 'cpu'
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     stream_recognition = StreamRecognition(source, save_path_search, save_path_detect, device)
 
     while True:
-        board, prob, quality, timestamp = stream_recognition.recognize()
+        board, prob, quality, timestamp, coordinates = stream_recognition.recognize()
         res, image = source.get(timestamp)
         print(quality, timestamp)
         # print(prob)
