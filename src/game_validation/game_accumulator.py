@@ -78,15 +78,14 @@ class GameAccumulator:
         accumulated = np.mean(move_probs, axis=0)
         return np.max(accumulated) > self.check_move_thresh and np.argmax(accumulated) - 1 == move.color
 
-
-def pop_until(self, timestamp: float):
-    i = 0
-    while len(self.timestamps_buffer) != 0 and self.timestamps_buffer[i] <= timestamp:
-        self.state_buffer.popleft()
-        self.timestamps_buffer.popleft()
-        self.prob_buffer.popleft()
-        i += 1
-    self.current = max(self.current - i, 0)
+    def pop_until(self, timestamp: float):
+        i = 0
+        while len(self.timestamps_buffer) != 0 and self.timestamps_buffer[i] <= timestamp:
+            self.state_buffer.popleft()
+            self.timestamps_buffer.popleft()
+            self.prob_buffer.popleft()
+            i += 1
+        self.current = max(self.current - i, 0)
 
 
 def to3dim_prob(state: np.ndarray, prob: np.ndarray) -> np.ndarray:
