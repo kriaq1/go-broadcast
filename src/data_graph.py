@@ -36,6 +36,8 @@ class DataGraph:
                     while True:
                         x = f(comp)
                         if not x:
+                            await self.queues[(src, dst)].join()
+                            await self.queues[(src, dst)].put(None)
                             return
                         await q.put(x)
                         await asyncio.sleep(0)
@@ -85,7 +87,7 @@ class DataGraph:
             asyncio.create_task(self.producers[k](self.components[k[0]], self.queues[k]))
             for k in self.producers.keys()
         ]
-        await asyncio.wait(consumer_tasks + producers_tasks)
+        await asyncio.gather(*(consumer_tasks + producers_tasks), return_exceptions=True)
 
     def run(self):
         asyncio.run(self.main())
