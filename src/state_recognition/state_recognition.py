@@ -34,8 +34,12 @@ class StateRecognition:
             self.segmentation_quality = 1
         else:
             mask = self.search.get_mask_image(image, out_threshold=segmentation_threshold)
-            coordinates = self.search.find_quadrilateral(mask)
-            segmentation_quality = get_segmentation_quality(mask, coordinates)
+            if np.sum(mask) / 255 < 361:
+                coordinates = np.array([[0, 0], [0, 1024], [1024, 1024], [1024, 0]])
+                segmentation_quality = 0
+            else:
+                coordinates = self.search.find_quadrilateral(mask)
+                segmentation_quality = get_segmentation_quality(mask, coordinates)
             if self.coordinates is None or segmentation_quality >= self.segmentation_quality * quality_coefficient:
                 self.coordinates = coordinates
                 self.segmentation_quality = segmentation_quality
@@ -45,7 +49,7 @@ class StateRecognition:
         return board_state, probabilities, self.segmentation_quality
 
 
-def get_segmentation_quality(mask, coordinates, min_area=100):
+def get_segmentation_quality(mask, coordinates, min_area=361):
     points = np.array(coordinates)
     square_mask = np.zeros(mask.shape[:2])
     cv2.fillPoly(square_mask, pts=[points], color=1)

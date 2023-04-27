@@ -77,3 +77,4 @@ class StreamRecognition:
         self.max_distance = max_distance
         self.search_period = search_period
         self.predict_epoch = 0
+        self.state_recognition.coordinates = None
