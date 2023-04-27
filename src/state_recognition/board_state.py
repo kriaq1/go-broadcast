@@ -13,7 +13,7 @@ def get_board_state(result, min_distance, max_distance) -> tuple[np.ndarray, np.
         component = get_largest_component(graph)
         relative_coordinates = get_relative_coordinates(graph, component)
         board, probabilities = find_subgraph(relative_coordinates)
-        return board[::-1] - 1, probabilities[::-1]
+        return board - 1, probabilities
     except Exception:
         return np.zeros((19, 19)), np.zeros((19, 19))
 

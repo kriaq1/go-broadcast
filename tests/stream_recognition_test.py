@@ -9,8 +9,8 @@ from src.stream_recognition import StreamRecognition
 
 def show_board_state(image, board, probabilities):
     cv2.imshow('image', image)
-    board = board.copy()[::-1]
-    prob = probabilities.copy()[::-1]
+    board = board.copy()
+    prob = probabilities.copy()
     empty = np.zeros((608, 608, 3), np.uint8)
     empty[:, :] = (181, 217, 253)
     coords = np.linspace(28, 580, 19).astype(int)
