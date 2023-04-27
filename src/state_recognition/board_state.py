@@ -22,9 +22,15 @@ def preprocess_boxes(boxes_n, cls, conf, min_distance):
     coordinates = []
     classes = []
     probabilities = []
+    boxes_n = boxes_n.numpy()
+    cls = cls.numpy()
+    conf = conf.numpy()
+    min_box_area = min_distance * min_distance * 0.75
     for box, c, prob in zip(boxes_n, cls, conf):
-        # if c != 1 and box[2] * box[3] < min_distance * min_distance * 0.5:
-        #    continue
+        # if np.any(box[:2].numpy() < min_distance / 2) or np.any(1 - box[:2].numpy() < min_distance / 2):
+        #     continue
+        if box[2] * box[3] < min_box_area and np.min(np.abs(boxes_n[:, :2] - box[:2])) < min_distance:
+            continue
         coordinates.append((box[0], box[1]))
         classes.append(c)
         probabilities.append(prob)

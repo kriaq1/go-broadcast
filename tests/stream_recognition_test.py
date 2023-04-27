@@ -35,18 +35,23 @@ def show_board_state(image, board, probabilities):
 if __name__ == '__main__':
     save_path_search = '../src/state_recognition/model_saves/segmentation18.pth'
     save_path_detect = '../src/state_recognition/model_saves/yolo8n.pt'
-    video_path = 'video/2.mp4'
+    video_path = 'video/1.mp4'
 
     device = 'cpu'
     # if you can use cuda:
     # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     source = VideoCapture(video_path)
+    # source.start_time -= 100
     stream_recognition = StreamRecognition(source, save_path_search, save_path_detect, device)
 
     while True:
-        board, prob, quality, timestamp, coordinates = stream_recognition.recognize()
-        res, image = source.get(timestamp)
-        print(quality, timestamp)
-        # print(prob)
-        show_board_state(image, board, prob)
+        try:
+            board, prob, quality, timestamp, coordinates = stream_recognition.recognize()
+            res, image = source.get(timestamp)
+            print(quality, timestamp)
+            # print(prob)
+            show_board_state(image, board, prob)
+        except Exception:
+            print('Predict error')
+
