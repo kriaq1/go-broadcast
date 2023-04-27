@@ -6,3 +6,5 @@ torch
 segmentation-models-pytorch
 matplotlib
 ultralytics
+sente
+tk
