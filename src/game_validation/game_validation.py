@@ -10,8 +10,8 @@ class GameValidation:
         self.valid_border_zeros_cnt = 15  # bound of zeros count on border
         self.valid_zeros_cnt = 30
         self.valid_segm_quality = 0  # quality bound
-        self.min_buff_size = 30  # necessary states for moves recognition
-        self.time_limit = 0 * 1000  # time(ms) distance between recognized moves and current state
+        self.min_buff_size = 0  # necessary states for moves recognition
+        self.time_limit = 5 * 1000  # time(ms) distance between recognized moves and current state
         self.probability_thresh = 0.5
         self.states_buff: deque[
             tuple[np.ndarray, np.ndarray, float]] = deque()  # save tuples of board, prob and timestamp
