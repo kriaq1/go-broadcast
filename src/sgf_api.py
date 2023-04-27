@@ -13,7 +13,7 @@ class SGF:
         else:
             return sente.stone.BLACK
 
-    def play(self, x, y, color):
+    def add(self, x, y, color):
         if self.prev_color == color:
             self.game.pss()
         self.game.play(x, y, self.get_color(color))
