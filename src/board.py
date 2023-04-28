@@ -161,7 +161,7 @@ class Board:
                 nxt = next_state._board[x][y]
                 cur = self._board[x][y]
                 if cur == 0 and nxt == self.current_player.value:
-                    return Turn
+                    return Turn(x, y, self.current_player)
         return None
 
     def __getitem__(self, key):
