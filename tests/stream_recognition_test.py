@@ -1,5 +1,3 @@
-from os import listdir
-
 import cv2
 import numpy as np
 
@@ -38,7 +36,6 @@ if __name__ == '__main__':
     video_path = 'video/1.mp4'
 
     device = 'cpu'
-    # if you can use cuda:
     # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     source = VideoCapture(video_path)

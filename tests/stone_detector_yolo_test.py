@@ -1,24 +1,21 @@
-import matplotlib.pyplot as plt
 from os import listdir
 
 import cv2
 import torch
-import numpy as np
 
-from src.feature_extractor import linear_perspective
+from src.state_recognition.feature_extractor import linear_perspective
 
-from src.find_board_nn import BoardSearch
-from src.find_board_nn import load_image
+from src.state_recognition.find_board_nn import BoardSearch
+from src.state_recognition.find_board_nn import load_image
 
-from src.detect_stones_yolo import StoneDetector
+from src.state_recognition.detect_stones_yolo import StoneDetector
 
 
 if __name__ == '__main__':
-    save_path_search = '../configs/model_saves/segmentation.pth'
-    save_path_detect = '../configs/model_saves/yolo8m.pt'
-    test_path = 'predict_images/original/'
-    result_cut_path = 'predict_images/cut/'
-    result_predict_path = 'predict_images/predict/'
+    save_path_search = '../src/state_recognition/model_saves/segmentation18.pth'
+    save_path_detect = '../src/state_recognition/model_saves/yolo8n.pt'
+    test_path = 'images/test/'
+    result_path = 'images/result_detect/'
 
     device = torch.device('cpu')
     # if you can use cuda:
@@ -39,7 +36,6 @@ if __name__ == '__main__':
         cls = results[0].boxes.cls
         data = results[0].boxes.data
 
-        print(boxes.shape, boxes_n.shape, conf.shape, cls.shape, data.shape)
+        # print(boxes.shape, boxes_n.shape, conf.shape, cls.shape, data.shape)
 
-        cv2.imshow('annotated frame', annotated_frame)
-        cv2.waitKey()
+        cv2.imwrite(result_path + file, annotated_frame)

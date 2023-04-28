@@ -1,8 +1,8 @@
-import src.preprocessing as preprocess
+import src.state_recognition.preprocessing as preprocess
 import cv2
 
 
-def preprocess_image(image_path='preprocessing_data/1.jpg', save_path='preprocessing_data/'):
+def preprocess_image(image_path='images/test/1.jpg', save_path='images/result_preprocessing/'):
     image = cv2.imread(image_path)
 
     cv2.imwrite(save_path + "6.rotate" + '.jpg', preprocess.rotate(image))

@@ -5,8 +5,8 @@ import cv2
 import torch
 import numpy as np
 
-from src.find_board_nn import BoardSearch
-from src.find_board_nn import load_image
+from src.state_recognition.find_board_nn import BoardSearch
+from src.state_recognition.find_board_nn import load_image
 
 
 def plot_image_and_mask(image, mask, points, save_name=None):
@@ -30,14 +30,14 @@ def plot_image_and_mask(image, mask, points, save_name=None):
     if save_name is None:
         plt.show()
     else:
-        plt.savefig('find_board_data/result/' + save_name, format='jpg', dpi=1024)
+        plt.savefig(save_name, format='jpg', dpi=1024)
     plt.close(fig)
 
 
 if __name__ == '__main__':
-    save_path = '../configs/model_saves/segmentation.pth'
-    test_path = 'find_board_data/test/'
-    result_path = 'find_board_data/result/'
+    save_path = '../src/state_recognition/model_saves/segmentation18.pth'
+    test_path = 'images/test/'
+    result_path = 'images/result_segmentation/'
 
     device = torch.device('cpu')
     # if you can use cuda:
@@ -49,4 +49,5 @@ if __name__ == '__main__':
         image = load_image(test_path + str(file))
         mask = search.get_mask_image(image)
         points = search.find_quadrilateral(mask)
-        plot_image_and_mask(image, mask, points, str(file))
+
+        plot_image_and_mask(image, mask, points, result_path + str(file))
