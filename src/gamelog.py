@@ -1,4 +1,4 @@
-from board import Board, Turn
+from .board import Board, Turn
 import numpy as np
 
 

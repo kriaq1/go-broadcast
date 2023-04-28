@@ -56,6 +56,9 @@ class Board:
     def is_in_bounds(self, x: int, y: int):
         return 0 <= x < self.size() and 0 <= y < self.size()
 
+    def change_current_player(self):
+        self.current_player = self.current_player.opposite()
+
     # Ставит камень указанного цвета на доску, проверяя на корректность ход и удаляя захваченные камни
     # Не проверяет повторение предыдущей позиции
     def put_stone(self, x, y, color):
@@ -163,6 +166,11 @@ class Board:
                 if cur == 0 and nxt == self.current_player.value:
                     return Turn(x, y, self.current_player)
         return None
+
+    def apply_turn(self, turn: Turn):
+        if self.current_player.opposite() != turn.player:
+            raise ForbiddenMoveException
+        self.make_turn((turn.x, turn.y))
 
     def __getitem__(self, key):
         return self._board[key]
