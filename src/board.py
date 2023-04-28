@@ -3,19 +3,19 @@ from enum import Enum
 from sys import stdout
 
 
-def GoBoardException(Exception):
+class GoBoardException(Exception):
     pass
 
 
-def OccupiedException(GoBoardException):
+class OccupiedException(GoBoardException):
     pass
 
 
-def ForbiddenMoveException(GoBoardException):
+class ForbiddenMoveException(GoBoardException):
     pass
 
 
-def OutOfBoundsException(GoBoardException):
+class OutOfBoundsException(GoBoardException):
     pass
 
 
@@ -59,7 +59,7 @@ class Board:
     # Ставит камень указанного цвета на доску, проверяя на корректность ход и удаляя захваченные камни
     # Не проверяет повторение предыдущей позиции
     def put_stone(self, x, y, color):
-        if not is_in_bounds(x, y):
+        if not self.is_in_bounds(x, y):
             raise OutOfBoundsException()
         if self[x][y] != 0:
             raise OccupiedException()
@@ -67,7 +67,7 @@ class Board:
         color = self.get_color_value(color)
         self[x][y] = color
         self.delete_captured(-color)
-        if self.check_correct(color):
+        if not self.check_correct(color):
             raise ForbiddenMoveException()
 
     def get_color_value(self, color: (str | int)):
@@ -132,7 +132,7 @@ class Board:
 
     def print_to_console(self, output=stdout):
         board = self.to_numpy().astype(str)
-        for x in reversed(range(self.size())):
+        for x in range(self.size()):
             for y in range(self.size()):
                 if board[x][y] == '1':
                     board[x][y] = 'w'
@@ -161,7 +161,7 @@ class Board:
                 nxt = next_state._board[x][y]
                 cur = self._board[x][y]
                 if cur == 0 and nxt == self.current_player.value:
-                    return Turn
+                    return Turn(x, y, self.current_player)
         return None
 
     def __getitem__(self, key):
@@ -178,3 +178,4 @@ class Board:
 
     def to_list(self):
         return self._board.tolist()
+

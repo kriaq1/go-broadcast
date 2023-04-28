@@ -106,8 +106,7 @@ def get_largest_component(graph):
     return result
 
 
-def get_relative_coordinates(graph, component) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    board_size = 19
+def get_relative_coordinates(graph, component, board_size=19) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     classes = graph[0]
     probabilities = graph[1]
     edges = graph[2]
@@ -143,8 +142,7 @@ def get_relative_coordinates(graph, component) -> tuple[np.ndarray, np.ndarray, 
     return result_mask, result_classes, result_probabilities
 
 
-def find_subgraph(relative_coordinates) -> tuple[np.ndarray, np.ndarray]:
-    board_size = 19
+def find_subgraph(relative_coordinates, board_size=19) -> tuple[np.ndarray, np.ndarray]:
     mask = relative_coordinates[0]
     classes = relative_coordinates[1]
     probabilities = relative_coordinates[2]
@@ -159,3 +157,4 @@ def find_subgraph(relative_coordinates) -> tuple[np.ndarray, np.ndarray]:
                 best = cut_mask_sum
                 y, x = i, j
     return classes[y:y + board_size, x:x + board_size], probabilities[y:y + board_size, x:x + board_size]
+
