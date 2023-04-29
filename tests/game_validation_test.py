@@ -1,3 +1,4 @@
+import asyncio
 from os import listdir
 
 import cv2
@@ -5,6 +6,7 @@ import numpy as np
 import torch
 from src.stream_capture import StreamCapture, StreamClosedException
 from src.stream_recognition import StreamRecognition
+from src.game_validation import GameValidation
 from src.game_validation import SimpleGameValidation
 import time
 
@@ -35,8 +37,6 @@ class VideoCapture2(StreamCapture):
 
 def show_board_state(image, board, val):
     cv2.imshow('image', image)
-    board = board[::-1]
-    val = val[::-1]
     empty = np.zeros((608, 608, 3), np.uint8)
     empty[:, :] = (181, 217, 253)
     coords = np.linspace(28, 580, 19).astype(int)
@@ -69,9 +69,9 @@ def show_board_state(image, board, val):
         cv2.waitKey()
 
 
-if __name__ == '__main__':
-    save_path_search = '/home/kriaq/Downloads/segmentation.pth'
-    save_path_detect = '/home/kriaq/Downloads/yolo8s.pt'
+async def main():
+    save_path_search = '../src/state_recognition/model_saves/segmentation18.pth'
+    save_path_detect = '../src/state_recognition/model_saves/yolo8n.pt'
     video_path = '/home/kriaq/Videos/goparties/6.mp4'
 
     device = 'cpu'
@@ -88,16 +88,16 @@ if __name__ == '__main__':
         start = time.time()
         try:
             print("start recognition")
-            board, prob, quality, timestamp = stream_recognition.recognize()
+            board, prob, quality, timestamp, _ = await stream_recognition.recognize()
             print("start validation")
             game_validation.validate(board, prob, quality, timestamp)
             print("end validation")
-            board = game_validation.board.to_numpy()
+            board = game_validation.scenarios_handler.board.to_numpy()
             move = game_validation.get_move()
             source.cur_time += time.time() - start
             print(time.time() - start)
             if move is not None:
-                x, y, color = move
+                x, y, color, timestamp = move
                 move_cnt[x][y] = cur_move
                 cur_move += 1
             res, image = source.get(timestamp)
@@ -108,3 +108,7 @@ if __name__ == '__main__':
             continue
         # print(prob)
         show_board_state(image, board, move_cnt)
+
+
+if __name__ == '__main__':
+    asyncio.run(main())

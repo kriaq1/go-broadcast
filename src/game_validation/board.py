@@ -1,15 +1,10 @@
 import numpy as np
+from .types import Move
 
 
-# board[x][y] == -1 - black color, 1 - white color, 0 - empty
 class Board:
-    def __init__(self, size=19, array=None):
-        if array is None:
-            self._board = np.zeros((size, size), dtype=int)
-        else:
-            self._board = np.array(array)
-            shape = self._board.shape
-            assert len(shape) == 2 and shape[0] == shape[1]
+    def __init__(self, state: np.ndarray):
+        self._board = state
 
     def clear(self, new_size=None):
         if new_size is None:
@@ -19,26 +14,26 @@ class Board:
     def size(self):
         return self._board.shape[0]
 
-    # Ставит камень указанного цвета на доску, проверяя на корректность ход и удаляя захваченные камни
-    # Не проверяет повторение предыдущей позиции
-    def put_stone(self, x, y, color):
-        assert 0 <= x < self.size()
-        assert 0 <= y < self.size()
-        assert self[x][y] == 0, 'The place is occupied'
+    def check_move(self, move: Move) -> bool:
+        if self[move.x][move.y] != 0:
+            return False
+        copy = self.copy()
+        copy.set_move(move)
+        return copy.check_correct()
 
-        color = self.get_color_value(color)
-        self[x][y] = color
-        self.delete_captured(-color)
-        assert self.check_correct(color), 'Forbidden move'
+    def check_moves(self, moves: list[Move]) -> int:
+        copy = self.copy()
+        for i, move in enumerate(moves):
+            if self[move.x][move.y] != 0:
+                return i
+            copy.set_move(move)
+            if not copy.check_correct():
+                return i
+        return -1
 
-    def get_color_value(self, color):
-        assert isinstance(color, str) or getattr(color, '__int__') is not None
-        if type(color) == str:
-            color = color.lower()[0]
-            assert color == 'b' or color == 'w'
-            color = 1 if color == 'w' else -1
-        assert color == 1 or color == -1
-        return color
+    def set_move(self, move: Move):
+        self[move.x][move.y] = move.color
+        self.delete_captured(-move.color)
 
     def set_alive_recursively(self, x, y, is_dead):
         color = self[x][y]
@@ -51,9 +46,9 @@ class Board:
 
     def has_breath(self, x, y):
         for delta in [-1, 1]:
-            if 0 <= x + delta < self.size() and self[x + delta][y] == 0:
+            if self.size() > x + delta >= 0 == self[x + delta][y]:
                 return True
-            if 0 <= y + delta < self.size() and self[x][y + delta] == 0:
+            if self.size() > y + delta >= 0 == self[x][y + delta]:
                 return True
         return False
 
@@ -80,39 +75,14 @@ class Board:
             return self.check_correct(1) and self.check_correct(-1)
         return len(self.find_captured(color)) == 0
 
-    def get(self, coordinate='S19'):
-        x, y = self.get_coordinates(coordinate)
-        return self._board[x][y]
-
-    def get_coordinates(self, coordinate):
-        x = ord(coordinate[0].lower()) - ord('a')
-        y = coordinate[1:]
-        y = int(y) if y.isdigit() else ord(y.lower()) - ord('a')
-        assert 0 <= x < self.size()
-        assert 0 <= y < self.size()
-        return x, y
-
-    def print_to_console(self):
-        board = self.to_numpy().astype(str)
-        for x in reversed(range(self.size())):
-            for y in range(self.size()):
-                if board[x][y] == '1':
-                    board[x][y] = 'w'
-                elif board[x][y] == '-1':
-                    board[x][y] = 'b'
-                else:
-                    board[x][y] = '.'
-            print(chr(ord('a') + x), np.array2string(board[x], formatter={'str_kind': lambda x: x}))
-        print(' ', np.arange(1, self.size() + 1))
-
     def __getitem__(self, key):
         return self._board[key]
 
     def __len__(self):
         return self.size()
-      
+
     def copy(self):
-        return Board(self.size(), self._board)
+        return Board(self._board.copy())
 
     def to_numpy(self):
         return self._board.copy()

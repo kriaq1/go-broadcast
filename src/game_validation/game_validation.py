@@ -1,13 +1,12 @@
 import numpy as np
 from .game_accumulator import GameAccumulator
 from .scenarios_handler import ScenariosHandler
-from board import Board
 
 
 class GameValidation:
-    def __init__(self, board=Board(),
+    def __init__(self, board: np.ndarray = np.zeros((19, 19), dtype=int),
                  current_player=-1,
-                 accumulating_time=5 * 1000,
+                 accumulating_time=2 * 1000,
                  accumulating_thresh=0.4,
                  max_empties_count=50,
                  max_border_empties_count=12,
@@ -35,9 +34,10 @@ class GameValidation:
             return
         self.scenarios_handler.validate(*accumulated)
 
-    async def get_move(self) -> (tuple[int, int, int, float] | None):
+    def get_move(self) -> (tuple[int, int, int, float] | None):
         move = self.scenarios_handler.get_move()
         if move is not None:
+            self.game_accumulator.pop_until(move.timestamp)
             return move.to_tuple()
         else:
-            return
+            return None

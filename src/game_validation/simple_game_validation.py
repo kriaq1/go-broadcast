@@ -4,7 +4,7 @@ from .board import Board
 
 
 class SimpleGameValidation:
-    def __init__(self, board=Board()):
+    def __init__(self, board=Board(np.zeros((19, 19), dtype=int))):
         self.board = board
         self.board_size = 19
         self.valid_border_zeros_cnt = 15  # bound of zeros count on border

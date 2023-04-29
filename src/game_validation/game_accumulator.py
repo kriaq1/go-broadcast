@@ -18,6 +18,7 @@ class GameAccumulator:
         get_accumulated returns accumulated states and probabilities;
         check_move checks that stone was standing until some time
     """
+
     def __init__(self, accumulating_time=5 * 1000,
                  accumulating_thresh=0.4,
                  max_empties_count=50,
@@ -70,24 +71,32 @@ class GameAccumulator:
         prob = np.max(accumulated, axis=0)
         return state, prob
 
+    def approve_state(self, state: np.ndarray) -> np.ndarray:
+        current_state = self.state_buffer[self.current]
+        state[state != current_state] = 0
+        return state
+
     def accumulation(self, probs: np.ndarray) -> np.ndarray:
         return np.mean(probs, axis=0)
 
     def get_accumulated(self) -> (tuple[np.ndarray, np.ndarray, float] | None):
+        if len(self.state_buffer) == 0:
+            return
         cur_timestamp = self.timestamps_buffer[self.current]
-        if len(self.state_buffer) == 0 or \
-                self.timestamps_buffer[-1] < self.accumulating_time + cur_timestamp:
+        if self.timestamps_buffer[-1] < self.accumulating_time + cur_timestamp:
             return
         l, r = self.current, bisect.bisect_right(self.timestamps_buffer, cur_timestamp + self.accumulating_time)
-        accumulated = self.accumulation(np.array(self.prob_buffer[l:r]))
+        accumulated = self.accumulation(np.array(list(self.prob_buffer)[l:r]))
         accumulated = np.where(accumulated >= self.accumulating_thresh, accumulated, 0)
+        state, prob = self.state_prob_by_3dim(accumulated)
+        state = self.approve_state(state)
         self.current += 1
-        return self.state_prob_by_3dim(accumulated) + (cur_timestamp,)
+        return state, prob, cur_timestamp
 
     def check_move(self, move: Move, timestamp: float) -> bool:
         l = bisect.bisect_right(self.timestamps_buffer, move.timestamp)
         r = bisect.bisect_left(self.timestamps_buffer, timestamp)
-        move_probs = np.array(prob[move.x][move.y] for prob in self.prob_buffer[l:r])
+        move_probs = np.array([prob[:, move.x, move.y] for prob in list(self.prob_buffer)[l:r]])
         accumulated = np.mean(move_probs, axis=0)
         return np.max(accumulated) > self.check_move_thresh and np.argmax(accumulated) - 1 == move.color
 
@@ -102,4 +111,4 @@ class GameAccumulator:
 
 
 def to3dim_prob(state: np.ndarray, prob: np.ndarray) -> np.ndarray:
-    return np.array(np.where(state == c, prob, 0) for c in (-1, 0, 1))
+    return np.array([np.where(state == c, prob, 0) for c in (-1, 0, 1)])
