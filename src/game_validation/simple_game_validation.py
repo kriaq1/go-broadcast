@@ -30,7 +30,7 @@ class SimpleGameValidation:
             board, prob, timestamp = self.states_buff.popleft()
             self.accumulate(board, prob, -1)
 
-    def get_move(self) -> (tuple[int, int, str] | None):
+    def get_move(self) -> (tuple[int, int, int] | None):
         if len(self.moves_buff) == 0:
             return None
         if len(self.moves_buff[0]) == 1:
