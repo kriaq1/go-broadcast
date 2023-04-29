@@ -5,6 +5,19 @@ import bisect
 
 
 class GameAccumulator:
+    """
+    Hyperparameters:
+        accumulated_time,
+        accumulated_thresh,
+        max_empties_count,
+        max_border_empties_count,
+        preprocess_coef,
+        check_move_thresh
+    Basic methods:
+        accumulate, that receives states and saves it after validation;
+        get_accumulated returns accumulated states and probabilities;
+        check_move checks that stone was standing until some time
+    """
     def __init__(self, accumulating_time=5 * 1000,
                  accumulating_thresh=0.4,
                  max_empties_count=50,
@@ -60,7 +73,7 @@ class GameAccumulator:
     def accumulation(self, probs: np.ndarray) -> np.ndarray:
         return np.mean(probs, axis=0)
 
-    def get_accumulated_state(self) -> (tuple[np.ndarray, np.ndarray, float] | None):
+    def get_accumulated(self) -> (tuple[np.ndarray, np.ndarray, float] | None):
         cur_timestamp = self.timestamps_buffer[self.current]
         if len(self.state_buffer) == 0 or \
                 self.timestamps_buffer[-1] < self.accumulating_time + cur_timestamp:

@@ -1,1 +1,1 @@
-from .game_validation import GameValidation
+from .simple_game_validation import SimpleGameValidation

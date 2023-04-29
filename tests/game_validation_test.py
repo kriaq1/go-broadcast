@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from src.stream_capture import StreamCapture, StreamClosedException
 from src.stream_recognition import StreamRecognition
-from src.game_validation import GameValidation
+from src.game_validation import SimpleGameValidation
 import time
 
 
