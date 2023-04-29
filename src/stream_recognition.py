@@ -36,16 +36,20 @@ class StreamRecognition:
         self.max_distance = 50 / 608
         self.search_period = 4
         self.predict_epoch = 0
+        self.mode = None
+        self.points = None
         try:
             self.state_recognition = StateRecognition(save_path_search, save_path_detect, torch.device(device))
         except Exception:
             raise LoadError
 
-    def recognize(self, mode: str = None, points: np.ndarray = None) -> tuple[
+    def recognize(self) -> tuple[
         np.ndarray, np.ndarray, float, float, np.ndarray]:
         res, frame, timestamp = self.source.read()
         if not res:
             raise StreamReadError
+        mode = self.mode
+        points = self.points
         if mode is None and self.predict_epoch % self.search_period != 0:
             mode = 'prev'
         try:
@@ -60,6 +64,8 @@ class StreamRecognition:
 
     def update_parameters(self,
                           source: StreamCapture = None,
+                          mode: str = None,
+                          points: np.ndarray = None,
                           search_period: int = 4,
                           seg_threshold: float = 0.5,
                           quality_coefficient: float = 0.975,
@@ -69,6 +75,8 @@ class StreamRecognition:
                           max_distance: float = 50 / 608):
         if source is not None:
             self.source = source
+        self.mode = mode
+        self.points = points
         self.seg_threshold = seg_threshold
         self.quality_coefficient = quality_coefficient
         self.conf = conf
