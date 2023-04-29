@@ -64,6 +64,10 @@ class StreamRecognition:
             self.predict_epoch += 1
             return board, prob, quality, timestamp, self.state_recognition.coordinates
 
+    async def last_coordinates(self):
+        async with self.parameter_lock:
+            return self.state_recognition.coordinates
+
     async def update_parameters(self,
                                 source: StreamCapture = None,
                                 mode: str = None,
