@@ -18,15 +18,15 @@ class StreamClosedException(StreamCaptureException):
 
 class StreamCapture(ABC):
     @abstractmethod
-    async def read(self) -> tuple[bool, np.ndarray, float]:
+    def read(self) -> tuple[bool, np.ndarray, float]:
         pass
 
     @abstractmethod
-    async def get(self, timestamp) -> tuple[bool, np.ndarray]:
+    def get(self, timestamp) -> tuple[bool, np.ndarray]:
         pass
 
     @abstractmethod
-    async def release(self):
+    def release(self):
         pass
 
 
