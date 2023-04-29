@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import asyncio
 
 from src.stream_capture import VideoCapture
 from src.stream_recognition import StreamRecognition
@@ -30,7 +31,7 @@ def show_board_state(image, board, probabilities):
     cv2.waitKey()
 
 
-if __name__ == '__main__':
+async def main():
     save_path_search = '../src/state_recognition/model_saves/segmentation18.pth'
     save_path_detect = '../src/state_recognition/model_saves/yolo8n.pt'
     video_path = 'video/1.mp4'
@@ -44,7 +45,7 @@ if __name__ == '__main__':
 
     while True:
         try:
-            board, prob, quality, timestamp, coordinates = stream_recognition.recognize()
+            board, prob, quality, timestamp, coordinates = await stream_recognition.recognize()
             res, image = source.get(timestamp)
             print(quality, timestamp)
             # print(prob)
@@ -52,3 +53,5 @@ if __name__ == '__main__':
         except Exception:
             print('Predict error')
 
+if __name__ == '__main__':
+    asyncio.run(main())
