@@ -50,8 +50,7 @@ async def main():
             print(quality, timestamp)
             # print(prob)
             show_board_state(image, board, prob)
-        except Exception as e:
-            raise e
+        except Exception:
             print('Predict error')
 
 if __name__ == '__main__':
