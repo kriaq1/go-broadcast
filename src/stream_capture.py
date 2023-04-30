@@ -103,7 +103,9 @@ def get_percentage_timestamp(save_path, percentage):
         timestamps = [int(file[:-4]) for file in files]
         # timestamps = list(sorted(timestamps))
         # return timestamps[int((len(timestamps) - 1) * percentage / 100)]
-        return int((max(timestamps) - min(timestamps)) * percentage / 100)
+        min_timestamp = min(timestamps)
+        max_timestamp = max(timestamps)
+        return int((max_timestamp - min_timestamp) * percentage / 100 + min_timestamp)
     except Exception:
         return 0
 
