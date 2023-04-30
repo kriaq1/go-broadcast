@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import asyncio
 
-from src.stream_capture import VideoCapture
+from src.stream_capture import VideoCapture, StreamSaver
 from src.stream_recognition import StreamRecognition
 
 
@@ -39,7 +39,7 @@ async def main():
     device = 'cpu'
     # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    source = VideoCapture(video_path)
+    source = StreamSaver(video_path)
     # source.start_time -= 100
     stream_recognition = StreamRecognition(source, save_path_search, save_path_detect, device)
 
