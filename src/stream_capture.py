@@ -29,6 +29,9 @@ class StreamCapture(ABC):
     def release(self):
         pass
 
+    def __del__(self):
+        self.release()
+
 
 class VideoCapture(StreamCapture):
     def __init__(self, source):
@@ -52,10 +55,7 @@ class VideoCapture(StreamCapture):
 
 
 def create_shared_memory_nparray(data, name):
-    try:
-        release_shared(name)
-    except Exception:
-        pass
+    release_shared(name)
     np_type = data.dtype
     np_shape = data.shape
     d_size = np.dtype(np_type).itemsize * np.prod(np_shape)
@@ -66,9 +66,12 @@ def create_shared_memory_nparray(data, name):
 
 
 def release_shared(name):
-    shm = shared_memory.SharedMemory(name=name)
-    shm.close()
-    shm.unlink()
+    try:
+        shm = shared_memory.SharedMemory(name=name)
+        shm.close()
+        shm.unlink()
+    except Exception:
+        pass
 
 
 def save_frame(save_path, timestamp, frame) -> None:
@@ -92,7 +95,7 @@ def release_frames(save_path):
         os.remove(save_path + file)
 
 
-def save_source_in_video(lock, frame_count, shared_ndarray, source, save_path, start_timestamp, fps_save, fps_update):
+def read_and_save_source(lock, frame_count, shared_ndarray, source, save_path, start_timestamp, fps_save, fps_update):
     cap = cv2.VideoCapture(source)
     fps = cap.get(cv2.CAP_PROP_FPS)
     start_timestamp_save = start_timestamp
@@ -109,8 +112,8 @@ def save_source_in_video(lock, frame_count, shared_ndarray, source, save_path, s
             start_timestamp_save = new_timestamp
         if new_timestamp - start_timestamp_update >= 1000 / fps_update:
             lock.acquire()
-            frame_count.value += 1
             shared_ndarray[:] = frame[:]
+            frame_count.value += 1
             lock.release()
             start_timestamp_update = new_timestamp
         if (time.time() - start_time) * 1000 < new_timestamp - start_timestamp - 500:
@@ -126,6 +129,7 @@ class StreamSaver(StreamCapture):
         if not cap.isOpened() or not res:
             raise StreamClosedException()
         start = cap.get(cv2.CAP_PROP_POS_MSEC)
+        cap.release()
         if save_path is not None:
             Path(save_path).mkdir(parents=True, exist_ok=True)
             save_frame(save_path, 0, frame)
@@ -134,20 +138,20 @@ class StreamSaver(StreamCapture):
         self.fps_update = fps_update
         self.lock = Lock()
         self.frame_count = Value('i', 0)
+        self.shared_name = shared_name
         self.shared_buffer = create_shared_memory_nparray(frame, shared_name)
         self.shared_ndarray = np.ndarray(frame.shape, dtype=frame.dtype, buffer=self.shared_buffer.buf)
         args = (self.lock, self.frame_count, self.shared_ndarray, source, save_path, start, fps_save, fps_update)
-        self.p = Process(target=save_source_in_video, args=args)
-        cap.release()
+        self.p = Process(target=read_and_save_source, args=args)
         self.p.start()
 
     def read(self) -> tuple[bool, np.ndarray, float]:
-        self.lock.acquire()
         if self.p.is_alive():
+            self.lock.acquire()
             res, frame, timestamp = True, self.shared_ndarray.copy(), self.frame_count.value
+            self.lock.release()
         else:
             res, frame, timestamp = False, None, None
-        self.lock.release()
         return res, frame, timestamp
 
     def get(self, timestamp) -> tuple[bool, np.ndarray | None]:
@@ -157,5 +161,17 @@ class StreamSaver(StreamCapture):
 
     def release(self):
         self.p.terminate()
-        release_shared('ndarray')
-        release_frames(self.save_path)
+        release_shared(self.shared_name)
+        if self.save_path is not None:
+            release_frames(self.save_path)
+            self.save_path = None
+
+
+def available_camera_indexes_list(max_index=10):
+    available_result = []
+    for index in range(max_index + 1):
+        cap = cv2.VideoCapture(index)
+        if cap.isOpened() and cap.read()[0]:
+            available_result.append(index)
+        cap.release()
+    return available_result
