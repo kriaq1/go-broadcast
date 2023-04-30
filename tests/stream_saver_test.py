@@ -1,4 +1,4 @@
-from src.stream_capture import StreamSaver, available_camera_indexes_list, get_percentage_timestamp
+from src.stream_capture import StreamSaver, available_camera_indexes_list
 import cv2
 
 if __name__ == '__main__':
@@ -15,10 +15,10 @@ if __name__ == '__main__':
         res, frame = stream_saver.get(timestamp - 6000)
         cv2.imshow('get', frame)
         cv2.waitKey(1)
-    print('0%: ', get_percentage_timestamp(save_path, 0))
-    print('30%: ', get_percentage_timestamp(save_path, 40))
-    print('60%: ', get_percentage_timestamp(save_path, 60))
-    print('100%: ', get_percentage_timestamp(save_path, 100))
+    print('0%: ', stream_saver.percentage_timestamp(0))
+    print('30%: ', stream_saver.percentage_timestamp(40))
+    print('60%: ', stream_saver.percentage_timestamp(60))
+    print('100%: ', stream_saver.percentage_timestamp(100))
     stream_saver.release()
 
     first_list = available_camera_indexes_list()

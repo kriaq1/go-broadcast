@@ -26,6 +26,10 @@ class StreamCapture(ABC):
         pass
 
     @abstractmethod
+    def percentage_timestamp(self, percentage) -> float:
+        pass
+
+    @abstractmethod
     def release(self):
         pass
 
@@ -49,6 +53,9 @@ class VideoCapture(StreamCapture):
         self.cap.set(cv2.CAP_PROP_POS_MSEC, timestamp)
         res, frame = self.cap.read()
         return res, frame
+
+    def percentage_timestamp(self, percentage):
+        return (time.time() - self.start_time) * percentage / 100
 
     def release(self):
         self.cap.release()
@@ -93,21 +100,6 @@ def release_frames(save_path):
     files = [file for file in os.listdir(save_path) if file.endswith('.jpg') and file[:-4].isdigit()]
     for file in files:
         os.remove(save_path + file)
-
-
-def get_percentage_timestamp(save_path, percentage):
-    try:
-        assert 0 <= percentage <= 100
-        files = os.listdir(save_path)
-        files = [file for file in files if file.endswith('.jpg') and file[:-4].isdigit()]
-        timestamps = [int(file[:-4]) for file in files]
-        # timestamps = list(sorted(timestamps))
-        # return timestamps[int((len(timestamps) - 1) * percentage / 100)]
-        min_timestamp = min(timestamps)
-        max_timestamp = max(timestamps)
-        return int((max_timestamp - min_timestamp) * percentage / 100 + min_timestamp)
-    except Exception:
-        return 0
 
 
 def read_and_save_source(lock, frame_count, shared_ndarray, source, save_path, start_timestamp, fps_save, fps_update):
@@ -173,6 +165,20 @@ class StreamSaver(StreamCapture):
         if self.save_path is None:
             return self.read()[:2]
         return get_frame(self.save_path, timestamp)
+
+    def percentage_timestamp(self, percentage) -> float:
+        try:
+            assert 0 <= percentage <= 100
+            files = os.listdir(self.save_path)
+            files = [file for file in files if file.endswith('.jpg') and file[:-4].isdigit()]
+            timestamps = [int(file[:-4]) for file in files]
+            # timestamps = list(sorted(timestamps))
+            # return timestamps[int((len(timestamps) - 1) * percentage / 100)]
+            min_timestamp = min(timestamps)
+            max_timestamp = max(timestamps)
+            return int((max_timestamp - min_timestamp) * percentage / 100 + min_timestamp)
+        except Exception:
+            return 0
 
     def release(self):
         self.p.terminate()
