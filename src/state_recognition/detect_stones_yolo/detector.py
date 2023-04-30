@@ -26,3 +26,4 @@ class StoneDetector:
 
     def get_track(self, source, conf=0.25, iou=0.5, max_det=1000):
         return self.get_predict(source, conf, iou, max_det, mode='track')
+
