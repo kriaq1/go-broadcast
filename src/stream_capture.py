@@ -95,6 +95,19 @@ def release_frames(save_path):
         os.remove(save_path + file)
 
 
+def get_percentage_timestamp(save_path, percentage):
+    try:
+        assert 0 <= percentage <= 100
+        files = os.listdir(save_path)
+        files = [file for file in files if file.endswith('.jpg') and file[:-4].isdigit()]
+        timestamps = [int(file[:-4]) for file in files]
+        # timestamps = list(sorted(timestamps))
+        # return timestamps[int((len(timestamps) - 1) * percentage / 100)]
+        return int(max(timestamps) * percentage / 100)
+    except Exception:
+        return 0
+
+
 def read_and_save_source(lock, frame_count, shared_ndarray, source, save_path, start_timestamp, fps_save, fps_update):
     cap = cv2.VideoCapture(source)
     fps = cap.get(cv2.CAP_PROP_FPS)
