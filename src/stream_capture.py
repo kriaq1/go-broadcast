@@ -103,7 +103,7 @@ def get_percentage_timestamp(save_path, percentage):
         timestamps = [int(file[:-4]) for file in files]
         # timestamps = list(sorted(timestamps))
         # return timestamps[int((len(timestamps) - 1) * percentage / 100)]
-        return int(max(timestamps) * percentage / 100)
+        return int((max(timestamps) - min(timestamps)) * percentage / 100)
     except Exception:
         return 0
 
@@ -121,12 +121,12 @@ def read_and_save_source(lock, frame_count, shared_ndarray, source, save_path, s
             break
         new_timestamp = cap.get(cv2.CAP_PROP_POS_MSEC)
         if save_path is not None and new_timestamp - start_timestamp_save >= 1000 / fps_save:
-            save_frame(save_path, frame_count.value + 1, frame)
+            save_frame(save_path, int(new_timestamp), frame)
             start_timestamp_save = new_timestamp
         if new_timestamp - start_timestamp_update >= 1000 / fps_update:
             lock.acquire()
             shared_ndarray[:] = frame[:]
-            frame_count.value += 1
+            frame_count.value = int(new_timestamp)
             lock.release()
             start_timestamp_update = new_timestamp
         if (time.time() - start_time) * 1000 < new_timestamp - start_timestamp - 500:
@@ -145,7 +145,7 @@ class StreamSaver(StreamCapture):
         cap.release()
         if save_path is not None:
             Path(save_path).mkdir(parents=True, exist_ok=True)
-            save_frame(save_path, 0, frame)
+            save_frame(save_path, int(start), frame)
         self.save_path = save_path
         self.fps_save = fps_save
         self.fps_update = fps_update
