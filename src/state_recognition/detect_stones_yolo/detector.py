@@ -18,12 +18,11 @@ class StoneDetector:
                                      max_det=max_det,
                                      line_thickness=1,
                                      show=False,
-                                     show_labels=True,
-                                     show_conf=True,
+                                     show_labels=False,
+                                     show_conf=False,
                                      device=device,
                                      mode=mode)
         return results
 
     def get_track(self, source, conf=0.25, iou=0.5, max_det=1000):
         return self.get_predict(source, conf, iou, max_det, mode='track')
-
