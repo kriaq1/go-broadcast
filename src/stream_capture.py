@@ -176,6 +176,7 @@ class StreamSaver(StreamCapture):
 
     def release(self):
         self.p.terminate()
+        self.p.join()
         release_shared(self.shared_name)
         if self.save_path is not None:
             release_frames(self.save_path)
