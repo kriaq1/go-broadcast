@@ -102,7 +102,7 @@ def release_frames(save_path):
         os.remove(save_path + file)
 
 
-def read_and_save_source(lock, frame_count, shared_ndarray, source, save_path, start_timestamp, fps_save, fps_update):
+def read_and_save_source(lock, milliseconds, shared_ndarray, source, save_path, start_timestamp, fps_save, fps_update):
     cap = cv2.VideoCapture(source)
     fps = cap.get(cv2.CAP_PROP_FPS)
     start_timestamp_save = start_timestamp
@@ -118,15 +118,16 @@ def read_and_save_source(lock, frame_count, shared_ndarray, source, save_path, s
             save_frame(save_path, int(new_timestamp), frame)
             start_timestamp_save = new_timestamp
         if new_timestamp - start_timestamp_update >= 1000 / fps_update:
-            lock.acquire()
-            shared_ndarray[:] = frame[:]
-            frame_count.value = int(new_timestamp)
-            lock.release()
+            with lock:
+                shared_ndarray[:] = frame[:]
+                milliseconds.value = int(new_timestamp)
             start_timestamp_update = new_timestamp
         if (time.time() - start_time) * 1000 < new_timestamp - start_timestamp - 500:
             time.sleep(1 / fps)
 
     cap.release()
+    with lock:
+        milliseconds.value = -1
 
 
 class StreamSaver(StreamCapture):
@@ -144,22 +145,18 @@ class StreamSaver(StreamCapture):
         self.fps_save = fps_save
         self.fps_update = fps_update
         self.lock = Lock()
-        self.frame_count = Value('i', 0)
+        self.milliseconds = Value('i', 0)
         self.shared_name = shared_name
         self.shared_buffer = create_shared_memory_nparray(frame, shared_name)
         self.shared_ndarray = np.ndarray(frame.shape, dtype=frame.dtype, buffer=self.shared_buffer.buf)
-        args = (self.lock, self.frame_count, self.shared_ndarray, source, save_path, start, fps_save, fps_update)
+        args = (self.lock, self.milliseconds, self.shared_ndarray, source, save_path, start, fps_save, fps_update)
         self.p = Process(target=read_and_save_source, args=args)
         self.p.start()
 
     def read(self) -> tuple[bool, np.ndarray, float]:
-        if self.p.is_alive():
-            self.lock.acquire()
-            res, frame, timestamp = True, self.shared_ndarray.copy(), self.frame_count.value
-            self.lock.release()
-        else:
-            res, frame, timestamp = False, None, None
-        return res, frame, timestamp
+        with self.lock:
+            milliseconds = self.milliseconds.value
+            return milliseconds != -1, self.shared_ndarray.copy(), milliseconds
 
     def get(self, timestamp) -> tuple[bool, np.ndarray | None]:
         if self.save_path is None:
