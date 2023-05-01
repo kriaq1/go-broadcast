@@ -157,7 +157,7 @@ class StreamSaver(StreamCapture):
     def read(self) -> tuple[bool, np.ndarray, float]:
         with self.milliseconds.get_lock():
             milliseconds = self.milliseconds.value
-            frame = np.empty_like(self.shared_ndarray)
+            frame = np.empty(self.shared_ndarray.shape, dtype=self.shared_ndarray.dtype)
             np.copyto(frame, self.shared_ndarray)
         return milliseconds != -1, frame, milliseconds
 
