@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import asyncio
 import sys
+import multiprocessing
 from multiprocessing import Process, Queue, Array
 from ctypes import Structure, c_int
 
@@ -115,29 +116,27 @@ def run_stream_recognition(queue_recognize, queue_update_parameters, coordinates
         except StreamReadError:
             print('Stream Read Error', file=sys.stderr)
             break
-        except ValueError:
-            print('Queue recognize closed', file=sys.stderr)
-            break
         except Exception:
             print('Recognize Error', file=sys.stderr)
-            pass
+            break
 
-        with coordinates.get_lock():
-            try:
+        parent = multiprocessing.parent_process()
+        if parent is None or not parent.is_alive():
+            break
+
+        try:
+            with coordinates.get_lock():
                 for coordinate, last_coordinate in zip(coordinates, stream_recognition.last_coordinates()):
                     coordinate.x, coordinate.y = last_coordinate[0], last_coordinate[1]
-            except Exception:
-                pass
+        except Exception:
+            pass
 
         try:
             parameters = queue_update_parameters.get_nowait()
             stream_recognition.update_parameters(**parameters)
-        except ValueError:
-            print('Queue parameters closed', file=sys.stderr)
-            break
         except Exception:
             pass
-    queue_update_parameters.close()
+    queue_recognize.close()
 
 
 class StreamRecognitionProcess:
@@ -159,10 +158,9 @@ class StreamRecognitionProcess:
         while self.p.is_alive() and self.queue_recognize.empty():
             await asyncio.sleep(0)
         try:
-            board, prob, quality, timestamp, coordinates = self.queue_recognize.get_nowait()
-            return board, prob, quality, timestamp, coordinates
+            return self.queue_recognize.get_nowait()
         except Exception:
-            return None, None, None, None, None
+            return (None,) * 5
 
     def last_coordinates(self) -> np.ndarray:
         result = np.zeros((4, 2), dtype=int)
@@ -194,6 +192,6 @@ class StreamRecognitionProcess:
         return self.p.is_alive()
 
     def __del__(self):
-        self.queue_recognize.close()
+        self.queue_update_parameters.close()
         self.p.terminate()
         self.p.join()
