@@ -15,16 +15,16 @@ def get_board_state(result, min_distance, max_distance) -> tuple[np.ndarray, np.
         board, probabilities = find_subgraph(relative_coordinates)
         return board - 1, probabilities
     except Exception:
-        return np.zeros((19, 19)), np.zeros((19, 19))
+        return np.zeros((19, 19), dtype=int), np.zeros((19, 19))
 
 
 def preprocess_boxes(boxes_n, cls, conf, min_distance):
     coordinates = []
     classes = []
     probabilities = []
-    boxes_n = boxes_n.numpy()
-    cls = cls.numpy()
-    conf = conf.numpy()
+    boxes_n = boxes_n.numpy().astype(float)
+    cls = cls.numpy().astype(int)
+    conf = conf.numpy().astype(float)
     min_box_area = min_distance * min_distance * 0.75
     for box, c, prob in zip(boxes_n, cls, conf):
         # if np.any(box[:2].numpy() < min_distance / 2) or np.any(1 - box[:2].numpy() < min_distance / 2):
@@ -38,8 +38,8 @@ def preprocess_boxes(boxes_n, cls, conf, min_distance):
 
 
 def check_edge(distance):
-    distance_x = distance[0]
-    distance_y = distance[1]
+    distance_x = float(distance[0])
+    distance_y = float(distance[1])
 
     if abs(distance_x) < abs(distance_y) and distance_y > 0:
         return 0
@@ -63,7 +63,7 @@ def build_graph(coordinates, classes, probabilities, min_dist, max_dist) -> tupl
         for j in argsort_distances[i]:
             if i == j:
                 continue
-            distance = abs_distances[i][j]
+            distance = float(abs_distances[i][j])
             if distance > max_dist:
                 break
             if distance < min_dist:
@@ -84,7 +84,6 @@ def build_graph(coordinates, classes, probabilities, min_dist, max_dist) -> tupl
 
 def get_largest_component(graph):
     classes = graph[0]
-    probabilities = graph[1]
     edges = graph[2]
     size = len(classes)
     used = np.zeros(size, dtype=bool)
@@ -157,4 +156,3 @@ def find_subgraph(relative_coordinates, board_size=19) -> tuple[np.ndarray, np.n
                 best = cut_mask_sum
                 y, x = i, j
     return classes[y:y + board_size, x:x + board_size], probabilities[y:y + board_size, x:x + board_size]
-

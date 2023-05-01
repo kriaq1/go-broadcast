@@ -105,17 +105,17 @@ def run_stream_recognition(queue_recognize, queue_update_parameters, coordinates
         stream_recognition = StreamRecognition(**init_parameters)
     except LoadError:
         print('Load Error', file=sys.stderr)
+        queue_recognize.close()
         return
     while True:
         try:
             result = stream_recognition.recognize()
             queue_recognize.put(result)
+        except StreamReadError:
+            pass
         except PredictError:
             print('Predict Error', file=sys.stderr)
             pass
-        except StreamReadError:
-            print('Stream Read Error', file=sys.stderr)
-            break
         except Exception:
             print('Recognize Error', file=sys.stderr)
             break
@@ -131,11 +131,12 @@ def run_stream_recognition(queue_recognize, queue_update_parameters, coordinates
         except Exception:
             pass
 
-        try:
-            parameters = queue_update_parameters.get_nowait()
-            stream_recognition.update_parameters(**parameters)
-        except Exception:
-            pass
+        while not queue_update_parameters.empty():
+            try:
+                parameters = queue_update_parameters.get_nowait()
+                stream_recognition.update_parameters(**parameters)
+            except Exception:
+                break
     queue_recognize.close()
 
 
@@ -187,6 +188,9 @@ class StreamRecognitionProcess:
                           seg_threshold=seg_threshold, quality_coefficient=quality_coefficient,
                           conf=conf, iou=iou, min_distance=min_distance, max_distance=max_distance)
         self.queue_update_parameters.put(parameters)
+
+    def empty(self):
+        return self.queue_recognize.empty()
 
     def is_alive(self):
         return self.p.is_alive()
