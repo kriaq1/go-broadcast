@@ -186,6 +186,44 @@ class StreamSaver(StreamCapture):
             self.save_path = None
 
 
+class StreamClosed(StreamCapture):
+    def __init__(self):
+        pass
+
+    def read(self):
+        return False, None, None
+
+    def get(self, timestamp):
+        return False, None
+
+    def percentage_timestamp(self, percentage):
+        return 0
+
+    def release(self):
+        pass
+
+
+class StreamImage(StreamCapture):
+    def __init__(self, image):
+        self.image = image
+        self.closed = False
+
+    def read(self):
+        if not self.closed:
+            self.closed = True
+            return True, self.image, 0
+        return False, None, 0
+
+    def get(self, timestamp):
+        return True, self.image
+
+    def percentage_timestamp(self, percentage):
+        return 0
+
+    def release(self):
+        pass
+
+
 def available_camera_indexes_list(max_index=10):
     available_result = []
     for index in range(max_index + 1):
