@@ -1,4 +1,5 @@
 import numpy as np
+from collections import deque
 
 
 def get_board_state(result, min_distance, max_distance) -> tuple[np.ndarray, np.ndarray]:
@@ -15,21 +16,21 @@ def get_board_state(result, min_distance, max_distance) -> tuple[np.ndarray, np.
         board, probabilities = find_subgraph(relative_coordinates)
         return board - 1, probabilities
     except Exception:
-        return np.zeros((19, 19)), np.zeros((19, 19))
+        return np.zeros((19, 19), dtype=int), np.zeros((19, 19))
 
 
 def preprocess_boxes(boxes_n, cls, conf, min_distance):
     coordinates = []
     classes = []
     probabilities = []
-    boxes_n = boxes_n.numpy()
-    cls = cls.numpy()
-    conf = conf.numpy()
+    boxes_n = boxes_n.numpy().astype(float)
+    cls = cls.numpy().astype(int)
+    conf = conf.numpy().astype(float)
     min_box_area = min_distance * min_distance * 0.75
     for box, c, prob in zip(boxes_n, cls, conf):
-        # if np.any(box[:2].numpy() < min_distance / 2) or np.any(1 - box[:2].numpy() < min_distance / 2):
-        #     continue
-        if box[2] * box[3] < min_box_area and np.min(np.abs(boxes_n[:, :2] - box[:2])) < min_distance:
+        width = float(box[2])
+        height = float(box[3])
+        if not (0.75 <= width / height <= 1.5) or width * height < min_box_area:
             continue
         coordinates.append((box[0], box[1]))
         classes.append(c)
@@ -38,8 +39,8 @@ def preprocess_boxes(boxes_n, cls, conf, min_distance):
 
 
 def check_edge(distance):
-    distance_x = distance[0]
-    distance_y = distance[1]
+    distance_x = float(distance[0])
+    distance_y = float(distance[1])
 
     if abs(distance_x) < abs(distance_y) and distance_y > 0:
         return 0
@@ -63,7 +64,7 @@ def build_graph(coordinates, classes, probabilities, min_dist, max_dist) -> tupl
         for j in argsort_distances[i]:
             if i == j:
                 continue
-            distance = abs_distances[i][j]
+            distance = float(abs_distances[i][j])
             if distance > max_dist:
                 break
             if distance < min_dist:
@@ -84,7 +85,6 @@ def build_graph(coordinates, classes, probabilities, min_dist, max_dist) -> tupl
 
 def get_largest_component(graph):
     classes = graph[0]
-    probabilities = graph[1]
     edges = graph[2]
     size = len(classes)
     used = np.zeros(size, dtype=bool)
@@ -97,7 +97,7 @@ def get_largest_component(graph):
                 dfs(next_vertex, count)
 
     best, result = 0, 0
-    for vertex in range(size):
+    for vertex in np.random.permutation(size):
         if not used[vertex]:
             count = [0]
             dfs(vertex, count)
@@ -113,16 +113,18 @@ def get_relative_coordinates(graph, component, board_size=19) -> tuple[np.ndarra
     size = len(classes)
 
     relative_coordinates = [None] * size
-
-    def dfs(vertex, x, y):
-        relative_coordinates[vertex] = x, y
+    queue = deque()
+    queue.append(component)
+    relative_coordinates[component] = 0, 0
+    while queue:
+        vertex = queue.popleft()
+        x, y = relative_coordinates[vertex]
         diff = [(0, -1), (-1, 0), (0, 1), (1, 0)]
         for edge in range(4):
             next_vertex = edges[vertex][edge]
             if next_vertex != -1 and relative_coordinates[next_vertex] is None:
-                dfs(next_vertex, x + diff[edge][0], y + diff[edge][1])
-
-    dfs(component, 0, 0)
+                relative_coordinates[next_vertex] = x + diff[edge][0], y + diff[edge][1]
+                queue.append(next_vertex)
     relative_coordinates = np.array(relative_coordinates, dtype=object)
     not_none_coordinates = np.array(relative_coordinates[relative_coordinates != None].tolist())
     min_element = np.min(not_none_coordinates)
@@ -157,4 +159,3 @@ def find_subgraph(relative_coordinates, board_size=19) -> tuple[np.ndarray, np.n
                 best = cut_mask_sum
                 y, x = i, j
     return classes[y:y + board_size, x:x + board_size], probabilities[y:y + board_size, x:x + board_size]
-

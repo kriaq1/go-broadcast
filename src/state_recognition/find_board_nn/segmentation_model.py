@@ -16,7 +16,7 @@ def load(save_name='model.pth', device=torch.device('cpu')):
 
 def get_mask_image(image, net, scale=0.5, device=torch.device('cpu'), out_threshold=0.5):
     mask = predict_image(image, net, device, scale, out_threshold=out_threshold)
-    return mask_to_image(mask, [0, 255]).astype(int)
+    return mask_to_image(mask).astype(int)
 
 
 def load_and_predict(image, save_name='model.pth', scale=0.5, device=torch.device('cpu')):

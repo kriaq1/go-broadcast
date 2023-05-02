@@ -10,7 +10,6 @@ class BoardSearch:
         self.model = segmentation_model.load(save_name=save_path, device=self.device)
 
     def get_mask_image(self, image, out_threshold=0.5):
-        assert image.shape == (1024, 1024, 3)
         return segmentation_model.get_mask_image(image=image, net=self.model, scale=0.5, device=self.device,
                                                  out_threshold=out_threshold)
 
@@ -20,7 +19,5 @@ class BoardSearch:
 
     @staticmethod
     def find_quadrilateral(mask):
-        assert mask.ndim == 2
         coordinates = np.array(approximation.approximate_polygon(mask))[::-1]
-        coordinates = np.roll(coordinates, -np.argmin(np.sum(coordinates ** 2, axis=1)), axis=0)
-        return coordinates
+        return np.roll(coordinates, -np.argmin(np.sum(coordinates ** 2, axis=1)), axis=0)
