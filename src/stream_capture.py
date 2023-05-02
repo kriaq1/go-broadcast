@@ -3,7 +3,8 @@ import os
 from pathlib import Path
 import numpy as np
 import time
-from multiprocessing import Process, Lock, Value, shared_memory
+import multiprocessing
+from multiprocessing import Process, Value, shared_memory
 
 from abc import ABC, abstractmethod
 
@@ -23,6 +24,10 @@ class StreamCapture(ABC):
 
     @abstractmethod
     def get(self, timestamp) -> tuple[bool, np.ndarray]:
+        pass
+
+    @abstractmethod
+    def percentage_timestamp(self, percentage) -> float:
         pass
 
     @abstractmethod
@@ -49,6 +54,9 @@ class VideoCapture(StreamCapture):
         self.cap.set(cv2.CAP_PROP_POS_MSEC, timestamp)
         res, frame = self.cap.read()
         return res, frame
+
+    def percentage_timestamp(self, percentage):
+        return (time.time() - self.start_time) * percentage / 100
 
     def release(self):
         self.cap.release()
@@ -95,22 +103,7 @@ def release_frames(save_path):
         os.remove(save_path + file)
 
 
-def get_percentage_timestamp(save_path, percentage):
-    try:
-        assert 0 <= percentage <= 100
-        files = os.listdir(save_path)
-        files = [file for file in files if file.endswith('.jpg') and file[:-4].isdigit()]
-        timestamps = [int(file[:-4]) for file in files]
-        # timestamps = list(sorted(timestamps))
-        # return timestamps[int((len(timestamps) - 1) * percentage / 100)]
-        min_timestamp = min(timestamps)
-        max_timestamp = max(timestamps)
-        return int((max_timestamp - min_timestamp) * percentage / 100 + min_timestamp)
-    except Exception:
-        return 0
-
-
-def read_and_save_source(lock, milliseconds, shared_ndarray, source, save_path, start_timestamp, fps_save, fps_update):
+def read_and_save_source(milliseconds, shared_ndarray, source, save_path, start_timestamp, fps_save, fps_update):
     cap = cv2.VideoCapture(source)
     fps = cap.get(cv2.CAP_PROP_FPS)
     start_timestamp_save = start_timestamp
@@ -119,14 +112,15 @@ def read_and_save_source(lock, milliseconds, shared_ndarray, source, save_path, 
     start_time = time.time()
     while True:
         res, frame = cap.read()
-        if not res:
+        parent = multiprocessing.parent_process()
+        if not res or parent is None or not parent.is_alive():
             break
         new_timestamp = cap.get(cv2.CAP_PROP_POS_MSEC)
         if save_path is not None and new_timestamp - start_timestamp_save >= 1000 / fps_save:
             save_frame(save_path, int(new_timestamp), frame)
             start_timestamp_save = new_timestamp
         if new_timestamp - start_timestamp_update >= 1000 / fps_update:
-            with lock:
+            with milliseconds.get_lock():
                 shared_ndarray[:] = frame[:]
                 milliseconds.value = int(new_timestamp)
             start_timestamp_update = new_timestamp
@@ -134,7 +128,7 @@ def read_and_save_source(lock, milliseconds, shared_ndarray, source, save_path, 
             time.sleep(1 / fps)
 
     cap.release()
-    with lock:
+    with milliseconds.get_lock():
         milliseconds.value = -1
 
 
@@ -152,24 +146,36 @@ class StreamSaver(StreamCapture):
         self.save_path = save_path
         self.fps_save = fps_save
         self.fps_update = fps_update
-        self.lock = Lock()
         self.milliseconds = Value('i', 0)
         self.shared_name = shared_name
         self.shared_buffer = create_shared_memory_nparray(frame, shared_name)
         self.shared_ndarray = np.ndarray(frame.shape, dtype=frame.dtype, buffer=self.shared_buffer.buf)
-        args = self.lock, self.milliseconds, self.shared_ndarray, source, save_path, start, fps_save, fps_update
+        args = self.milliseconds, self.shared_ndarray, source, save_path, start, fps_save, fps_update
         self.p = Process(target=read_and_save_source, args=args)
         self.p.start()
 
     def read(self) -> tuple[bool, np.ndarray, float]:
-        with self.lock:
+        with self.milliseconds.get_lock():
             milliseconds = self.milliseconds.value
-            return milliseconds != -1, self.shared_ndarray.copy(), milliseconds
+            frame = np.empty(self.shared_ndarray.shape, dtype=self.shared_ndarray.dtype)
+            np.copyto(frame, self.shared_ndarray)
+        return milliseconds != -1, frame, milliseconds
 
     def get(self, timestamp) -> tuple[bool, np.ndarray | None]:
         if self.save_path is None:
             return self.read()[:2]
         return get_frame(self.save_path, timestamp)
+
+    def percentage_timestamp(self, percentage) -> float:
+        try:
+            files = os.listdir(self.save_path)
+            files = [file for file in files if file.endswith('.jpg') and file[:-4].isdigit()]
+            timestamps = [int(file[:-4]) for file in files]
+            min_timestamp = min(timestamps)
+            max_timestamp = max(timestamps)
+            return int((max_timestamp - min_timestamp) * percentage / 100 + min_timestamp)
+        except Exception:
+            return 0
 
     def release(self):
         self.p.terminate()
@@ -180,6 +186,44 @@ class StreamSaver(StreamCapture):
             self.save_path = None
 
 
+class StreamClosed(StreamCapture):
+    def __init__(self):
+        pass
+
+    def read(self):
+        return False, None, None
+
+    def get(self, timestamp):
+        return False, None
+
+    def percentage_timestamp(self, percentage):
+        return 0
+
+    def release(self):
+        pass
+
+
+class StreamImage(StreamCapture):
+    def __init__(self, image):
+        self.image = image
+        self.closed = False
+
+    def read(self):
+        if not self.closed:
+            self.closed = True
+            return True, self.image, 0
+        return False, None, 0
+
+    def get(self, timestamp):
+        return True, self.image
+
+    def percentage_timestamp(self, percentage):
+        return 0
+
+    def release(self):
+        pass
+
+
 def available_camera_indexes_list(max_index=10):
     available_result = []
     for index in range(max_index + 1):
@@ -188,3 +232,4 @@ def available_camera_indexes_list(max_index=10):
             available_result.append(index)
         cap.release()
     return available_result
+
