@@ -25,7 +25,7 @@ class Controller:
                       save_path_detect=save_path_detect,
                       device=device,
                       shared_coordinates=self.shared_coordinates,
-                      shared_board_state=self.shared_board_state, \
+                      shared_board_state=self.shared_board_state,
                       moves_queue=self.moves_queue,
                       recognition_parameters_queue=self.recognition_parameters_queue,
                       gamelog_parameters_queue=self.gamelog_parameters_queue)
