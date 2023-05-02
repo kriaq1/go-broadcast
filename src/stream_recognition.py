@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import asyncio
 import sys
+import multiprocessing
 from multiprocessing import Process, Queue, Array
 from ctypes import Structure, c_int
 
@@ -104,40 +105,39 @@ def run_stream_recognition(queue_recognize, queue_update_parameters, coordinates
         stream_recognition = StreamRecognition(**init_parameters)
     except LoadError:
         print('Load Error', file=sys.stderr)
+        queue_recognize.close()
         return
     while True:
         try:
             result = stream_recognition.recognize()
             queue_recognize.put(result)
+        except StreamReadError:
+            pass
         except PredictError:
             print('Predict Error', file=sys.stderr)
             pass
-        except StreamReadError:
-            print('Stream Read Error', file=sys.stderr)
-            break
-        except ValueError:
-            print('Queue recognize closed', file=sys.stderr)
-            break
         except Exception:
             print('Recognize Error', file=sys.stderr)
-            pass
+            break
 
-        with coordinates.get_lock():
-            try:
-                for coordinate, last_coordinate in zip(coordinates, stream_recognition.last_coordinates()):
-                    coordinate.x, coordinate.y = last_coordinate[0], last_coordinate[1]
-            except Exception:
-                pass
+        parent = multiprocessing.parent_process()
+        if parent is None or not parent.is_alive():
+            break
 
         try:
-            parameters = queue_update_parameters.get_nowait()
-            stream_recognition.update_parameters(**parameters)
-        except ValueError:
-            print('Queue parameters closed', file=sys.stderr)
-            break
+            with coordinates.get_lock():
+                for coordinate, last_coordinate in zip(coordinates, stream_recognition.last_coordinates()):
+                    coordinate.x, coordinate.y = last_coordinate[0], last_coordinate[1]
         except Exception:
             pass
-    queue_update_parameters.close()
+
+        while not queue_update_parameters.empty():
+            try:
+                parameters = queue_update_parameters.get_nowait()
+                stream_recognition.update_parameters(**parameters)
+            except Exception:
+                break
+    queue_recognize.close()
 
 
 class StreamRecognitionProcess:
@@ -150,17 +150,15 @@ class StreamRecognitionProcess:
         self.queue_recognize = Queue()
         self.queue_update_parameters = Queue()
         self.coordinates = Array(Point, [(0, 0), (0, 0), (0, 0), (0, 0)])
-        args = self.queue_recognize, self.queue_update_parameters, self.coordinates, init
+        args = (self.queue_recognize, self.queue_update_parameters, self.coordinates, init)
         self.p = Process(target=run_stream_recognition, args=args)
         self.p.start()
 
-    async def recognize(self) -> \
-            tuple[np.ndarray, np.ndarray, float, float, np.ndarray] | None:
+    async def recognize(self) -> tuple[np.ndarray, np.ndarray, float, float, np.ndarray] | None:
         while self.p.is_alive() and self.queue_recognize.empty():
             await asyncio.sleep(0)
         try:
-            board, prob, quality, timestamp, coordinates = self.queue_recognize.get_nowait()
-            return board, prob, quality, timestamp, coordinates
+            return self.queue_recognize.get_nowait()
         except Exception:
             return None
 
@@ -190,10 +188,14 @@ class StreamRecognitionProcess:
                           conf=conf, iou=iou, min_distance=min_distance, max_distance=max_distance)
         self.queue_update_parameters.put(parameters)
 
+    def empty(self):
+        return self.queue_recognize.empty()
+
     def is_alive(self):
         return self.p.is_alive()
 
     def __del__(self):
-        self.queue_recognize.close()
+        self.queue_update_parameters.close()
         self.p.terminate()
         self.p.join()
+
