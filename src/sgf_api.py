@@ -2,7 +2,7 @@ import sente
 from tkinter.filedialog import asksaveasfile
 
 
-class SGF:
+class SGFWriter:
     def __init__(self):
         self.game = sente.Game(rules=sente.rules.JAPANESE)
         self.prev_color = 1
@@ -62,3 +62,15 @@ class SGF:
             return sente.stone.WHITE
         else:
             return sente.stone.BLACK
+
+
+class SGFAPI:
+    def __init__(self, save_path: str = None):
+        self.sgf = SGFWriter()
+        self.save_path = save_path
+
+    def add(self, turn):
+        self.sgf.add(turn.x, turn.y, turn.player)
+
+    def broadcast(self):
+        self.sgf.save(self.save_path)
