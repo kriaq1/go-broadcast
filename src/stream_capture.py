@@ -232,4 +232,3 @@ def available_camera_indexes_list(max_index=10):
             available_result.append(index)
         cap.release()
     return available_result
-

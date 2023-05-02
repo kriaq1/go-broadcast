@@ -198,4 +198,3 @@ class StreamRecognitionProcess:
         self.queue_update_parameters.close()
         self.p.terminate()
         self.p.join()
-

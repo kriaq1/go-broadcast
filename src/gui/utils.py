@@ -14,21 +14,35 @@ def convert_cv_qt(cv_img):
     return QPixmap.fromImage(p)
 
 
-def padding(image, shape=(1024, 1024), inter=cv2.INTER_AREA):
+def padding(image, shape=(1024, 1024), color=(0, 0, 0), inter=cv2.INTER_AREA):
     old_height, old_width = image.shape[0], image.shape[1]
-    if old_height / old_width <= shape[0] / shape[1]:
+    if old_height * shape[1] <= shape[0] * old_width:
         new_width = shape[1]
         new_height = shape[1] * old_height // old_width
         image = cv2.resize(image, (new_width, new_height), interpolation=inter)
         y = shape[0] - image.shape[0]
-        image = cv2.copyMakeBorder(image, y // 2, y // 2 + y % 2, 0, 0, cv2.BORDER_CONSTANT)
+        image = cv2.copyMakeBorder(image, y // 2, y // 2 + y % 2, 0, 0, cv2.BORDER_CONSTANT, value=color)
     else:
         new_width = shape[0] * old_width // old_height
         new_height = shape[0]
         image = cv2.resize(image, (new_width, new_height), interpolation=inter)
         x = shape[1] - image.shape[1]
-        image = cv2.copyMakeBorder(image, 0, 0, x // 2, x // 2 + x % 2, cv2.BORDER_CONSTANT)
+        image = cv2.copyMakeBorder(image, 0, 0, x // 2, x // 2 + x % 2, cv2.BORDER_CONSTANT, value=color)
     return image
+
+
+def unpadding_points(points, shape, padded_shape=(1024, 1024)):
+    points = points.astype(np.float64)
+    old_height, old_width = shape[0], shape[1]
+    if shape[0] * padded_shape[1] <= padded_shape[0] * shape[1]:
+        new_width, new_height = shape[1], shape[1] * old_height // old_width
+        points -= [0, (padded_shape[0] - new_height) // 2]
+        points *= old_width / shape[1]
+    else:
+        new_width, new_height = shape[0] * old_width // old_height, shape[0]
+        points -= [(padded_shape[1] - new_width) // 2, 0]
+        points *= old_width / shape[1]
+    return points.astype(int)
 
 
 def draw_contours(image: np.ndarray, points, color=(0, 0, 255), thickness=2) -> np.ndarray:
@@ -53,24 +67,31 @@ def draw_empty_board():
 def draw_board_state(board: np.ndarray, val=None, empty=None):
     if empty is None:
         empty = draw_empty_board()
-        coords = np.linspace(28, 580, 19).astype(int)
+    coords = np.linspace(28, 580, 19).astype(int)
     for i in range(len(coords)):
         for j in range(len(coords)):
-            x = coords[i]
-            y = coords[j]
+            state = int(board[j][i])
+            if state == 0:
+                continue
+            x = int(coords[i])
+            y = int(coords[j])
+            if state == 1:
+                color = (255, 255, 255)
+                shadow_color = (50, 50, 50)
+                text_color = (0, 0, 0)
+            elif state == -1:
+                color = (0, 0, 0)
+                shadow_color = (100, 100, 100)
+                text_color = (255, 255, 255)
+            else:
+                color = (0, 0, 255)
+                shadow_color = (0, 0, 255)
+                text_color = (0, 0, 0)
+            cv2.circle(empty, (x, y + 2), radius=12, color=shadow_color, thickness=-1)
+            cv2.circle(empty, (x, y), radius=12, color=color, thickness=-1)
             if val:
                 xshift = 5 * len(str(val[j][i]))
-            if board[j][i] == 1:
-                cv2.circle(empty, (x, y + 2), radius=12, color=(50, 50, 50), thickness=-1)
-                cv2.circle(empty, (x, y), radius=12, color=(255, 255, 255), thickness=-1)
-                if val:
-                    cv2.putText(empty, str(val[j][i]), (x - xshift, y + 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                                (0, 0, 0), 1, cv2.LINE_AA)
-            if board[j][i] == -1:
-                cv2.circle(empty, (x, y + 2), radius=12, color=(100, 100, 100), thickness=-1)
-                cv2.circle(empty, (x, y), radius=12, color=(0, 0, 0), thickness=-1)
-                if val:
-                    cv2.putText(empty, str(val[j][i]), (x - xshift, y + 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                                (255, 255, 255), 1, cv2.LINE_AA)
-    return empty
+                cv2.putText(empty, str(val[j][i]), (x - xshift, y + 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                            text_color, 1, cv2.LINE_AA)
 
+    return empty
