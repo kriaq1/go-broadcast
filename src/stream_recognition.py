@@ -150,19 +150,19 @@ class StreamRecognitionProcess:
         self.queue_recognize = Queue()
         self.queue_update_parameters = Queue()
         self.coordinates = Array(Point, [(0, 0), (0, 0), (0, 0), (0, 0)])
-        args = (self.queue_recognize, self.queue_update_parameters, self.coordinates, init)
+        args = self.queue_recognize, self.queue_update_parameters, self.coordinates, init
         self.p = Process(target=run_stream_recognition, args=args)
         self.p.start()
 
     async def recognize(self) -> \
-            tuple[np.ndarray, np.ndarray, float, float, np.ndarray] | tuple[None, None, None, None, None]:
+            tuple[np.ndarray, np.ndarray, float, float, np.ndarray] | None:
         while self.p.is_alive() and self.queue_recognize.empty():
             await asyncio.sleep(0)
         try:
             board, prob, quality, timestamp, coordinates = self.queue_recognize.get_nowait()
             return board, prob, quality, timestamp, coordinates
         except Exception:
-            return None, None, None, None, None
+            return None
 
     def last_coordinates(self) -> np.ndarray:
         result = np.zeros((4, 2), dtype=int)
