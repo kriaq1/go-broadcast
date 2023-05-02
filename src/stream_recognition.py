@@ -154,14 +154,13 @@ class StreamRecognitionProcess:
         self.p = Process(target=run_stream_recognition, args=args)
         self.p.start()
 
-    async def recognize(self) -> \
-            tuple[np.ndarray, np.ndarray, float, float, np.ndarray] | tuple[None, None, None, None, None]:
+    async def recognize(self) -> tuple[np.ndarray, np.ndarray, float, float, np.ndarray] | None:
         while self.p.is_alive() and self.queue_recognize.empty():
             await asyncio.sleep(0)
         try:
             return self.queue_recognize.get_nowait()
         except Exception:
-            return (None,) * 5
+            return None
 
     def last_coordinates(self) -> np.ndarray:
         result = np.zeros((4, 2), dtype=int)

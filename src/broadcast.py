@@ -15,5 +15,5 @@ class Broadcast:
             api.add(turn)
 
     def broadcast(self):
-        for api in self.api:
+        for api in self.apis:
             api.broadcast()
