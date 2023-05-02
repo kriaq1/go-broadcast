@@ -1,9 +1,6 @@
 import sente
 from tkinter.filedialog import asksaveasfile
 
-from .api import API
-from .board import Turn
-
 
 class SGFWriter:
     def __init__(self):
@@ -67,12 +64,12 @@ class SGFWriter:
             return sente.stone.BLACK
 
 
-class SGFAPI(API):
+class SGFAPI:
     def __init__(self, save_path: str = None):
         self.sgf = SGFWriter()
         self.save_path = save_path
 
-    def add(self, turn: Turn):
+    def add(self, turn):
         self.sgf.add(turn.x, turn.y, turn.player)
 
     def broadcast(self):
