@@ -150,7 +150,7 @@ class StreamSaver(StreamCapture):
         self.shared_name = shared_name
         self.shared_buffer = create_shared_memory_nparray(frame, shared_name)
         self.shared_ndarray = np.ndarray(frame.shape, dtype=frame.dtype, buffer=self.shared_buffer.buf)
-        args = (self.milliseconds, self.shared_ndarray, source, save_path, start, fps_save, fps_update)
+        args = self.milliseconds, self.shared_ndarray, source, save_path, start, fps_save, fps_update
         self.p = Process(target=read_and_save_source, args=args)
         self.p.start()
 
@@ -232,3 +232,4 @@ def available_camera_indexes_list(max_index=10):
             available_result.append(index)
         cap.release()
     return available_result
+
