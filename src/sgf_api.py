@@ -15,7 +15,7 @@ class SGFWriter:
 
     def pss(self):
         self.game.pss()
-        self.prev_color = 1 if self.prev_color == -1 else -1
+        self.prev_color = -self.prev_color
 
     def save(self, path=None):
         if path is None:
@@ -69,8 +69,8 @@ class SGFAPI:
         self.sgf = SGFWriter()
         self.save_path = save_path
 
-    def add(self, turn):
-        self.sgf.add(turn.x, turn.y, turn.player)
+    def add(self, move):
+        self.sgf.add(move.x, move.y, move.color)
 
     def broadcast(self):
         self.sgf.save(self.save_path)
