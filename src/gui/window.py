@@ -1,10 +1,9 @@
 import time
-
 import numpy as np
 from . import utils
 from .ui_mainwindow import Ui_MainWindow
 from PyQt5 import QtWidgets, QtGui
-from PyQt5.QtCore import pyqtSlot, pyqtSignal, QTimer
+from PyQt5.QtCore import pyqtSlot, QTimer
 from PyQt5.QtMultimedia import QCameraInfo
 from ..stream_capture import StreamCapture, StreamSaver, StreamClosed
 from .controller import Controller
@@ -73,7 +72,7 @@ class Window(QtWidgets.QMainWindow):
     def start_recognition(self):
         self.block_choice = True
         if self.controller:
-            self.controller.update_parameters(source=self.stream_capture)
+            self.controller.update_recognition_parameters(source=self.stream_capture)
         self.ui.stop_recognition_button.setEnabled(True)
         self.ui.start_recognition_button.setEnabled(False)
         self.ui.choose_source_box.setEnabled(False)
@@ -82,7 +81,7 @@ class Window(QtWidgets.QMainWindow):
     def stop_recognition(self):
         self.block_choice = False
         if self.controller:
-            self.controller.update_parameters(source=StreamClosed())
+            self.controller.update_recognition_parameters(source=StreamClosed())
         self.ui.start_recognition_button.setEnabled(True)
         self.ui.choose_source_box.setEnabled(True)
         self.ui.stop_recognition_button.setEnabled(False)

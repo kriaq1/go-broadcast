@@ -16,7 +16,7 @@ def convert_cv_qt(cv_img):
 
 def padding(image, shape=(1024, 1024), color=(0, 0, 0), inter=cv2.INTER_AREA):
     old_height, old_width = image.shape[0], image.shape[1]
-    if old_height / old_width <= shape[0] / shape[1]:
+    if old_height * shape[1] <= shape[0] * old_width:
         new_width = shape[1]
         new_height = shape[1] * old_height // old_width
         image = cv2.resize(image, (new_width, new_height), interpolation=inter)
@@ -29,6 +29,20 @@ def padding(image, shape=(1024, 1024), color=(0, 0, 0), inter=cv2.INTER_AREA):
         x = shape[1] - image.shape[1]
         image = cv2.copyMakeBorder(image, 0, 0, x // 2, x // 2 + x % 2, cv2.BORDER_CONSTANT, value=color)
     return image
+
+
+def unpadding_points(points, shape, padded_shape=(1024, 1024)):
+    points = points.astype(np.float64)
+    old_height, old_width = shape[0], shape[1]
+    if shape[0] * padded_shape[1] <= padded_shape[0] * shape[1]:
+        new_width, new_height = shape[1], shape[1] * old_height // old_width
+        points -= [0, (padded_shape[0] - new_height) // 2]
+        points *= old_width / shape[1]
+    else:
+        new_width, new_height = shape[0] * old_width // old_height, shape[0]
+        points -= [(padded_shape[1] - new_width) // 2, 0]
+        points *= old_width / shape[1]
+    return points.astype(int)
 
 
 def draw_contours(image: np.ndarray, points, color=(0, 0, 255), thickness=2) -> np.ndarray:
