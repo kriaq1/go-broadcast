@@ -5,7 +5,7 @@ from multiprocessing import Queue, Array
 from ..stream_recognition import StreamRecognitionProcess
 from ..stream_capture import StreamClosed, StreamImage, StreamSaver
 from ..game_validation import GameValidation
-from ..sgf_api import SGF
+from ..sgf_api import SGFAPI
 from ctypes import Structure, c_int
 
 

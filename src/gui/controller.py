@@ -2,7 +2,7 @@ import numpy as np
 import multiprocessing
 from multiprocessing import Queue, Array
 from ..stream_capture import StreamClosed, StreamImage, StreamSaver
-from ..sgf_api import SGF
+from ..sgf_api import SGFAPI
 from ctypes import Structure, c_int
 from .process_controller import run_controller
 from . import utils
@@ -61,7 +61,7 @@ class Controller:
     def last_board_state(self) -> tuple[np.ndarray, np.ndarray | None]:
         return np.resize(np.array(self.shared_board_state), (19, 19)), None
 
-    def get_sgf(self) -> SGF:
+    def get_sgf(self) -> SGFAPI:
         pass
 
     def get_recognition_state(self, image):
