@@ -112,12 +112,14 @@ class Window(QtWidgets.QMainWindow):
 
     @pyqtSlot(int)
     def choose_source(self, id):
+        if id == self.current_source:
+            return
         if id == 0:
             self.stream_capture = StreamClosed()
         else:
             self.stream_capture = StreamSaver(self.sources[id], save_path=self.cache_path)
         if self.controller:
-            self.controller.update_parameters(source=self.stream_capture)
+            self.controller.update_recognition_parameters(source=self.stream_capture)
         self.current_source = id
 
     @pyqtSlot()
