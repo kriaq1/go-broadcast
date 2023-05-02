@@ -1,7 +1,7 @@
-from src.sgf_api import SGF
+from src.sgf_api import SGFWriter
 
 if __name__ == '__main__':
-    sgf = SGF()
+    sgf = SGFWriter()
     sgf.add(4, 4, -1)
     sgf.add(20, 20, 1)
     sgf.add(1, 1, -1)
