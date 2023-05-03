@@ -189,6 +189,6 @@ class Window(QtWidgets.QMainWindow):
                                                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         if close == QtWidgets.QMessageBox.Yes:
             event.accept()
-            del self.stream_capture
+            self.stream_capture = None
         else:
             event.ignore()

@@ -1,6 +1,7 @@
 import numpy as np
 from .game_accumulator import GameAccumulator
 from .scenarios_handler import ScenariosHandler
+from .types import Move
 
 
 class GameValidation:
@@ -34,10 +35,10 @@ class GameValidation:
             return
         self.scenarios_handler.validate(*accumulated)
 
-    def get_move(self) -> (tuple[int, int, int, float] | None):
+    def get_move(self) -> (Move | None):
         move = self.scenarios_handler.get_move()
         if move is not None:
             self.game_accumulator.pop_until(move.timestamp)
-            return move.to_tuple()
+            return move
         else:
             return None

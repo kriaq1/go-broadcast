@@ -1,43 +1,39 @@
-from .board import Board, Turn
+from .game_validation import Move, GameValidation
 import numpy as np
+import asyncio
 
 
 class GameLog:
     def __init__(self):
-        self.board = Board()
-        self.turns: list[Turn] = []
-        self.turn_iterator = 0
+        self.game_validation = GameValidation()
+        self.lock = asyncio.Lock()
+        self.moves: list[Move] = []
 
-    def apply_matrix(self, m: np.ndarray) -> bool:
+    async def append_state(self, state: np.ndarray, prob: np.ndarray, quality: float, timestamp: float) -> bool:
         '''
-        apply_matrix(m: np.ndarray) -> bool
-
-        Tries to apply go matrix
-        from recognition component in order
-        to extract turn.
-
-        Returns true, if extraction was complete,
-        otherwise false
+        append_state
         '''
-        assert m.ndim() == 2
-
-        if self.board.to_numpy() == m:
+        try:
+            async with self.lock:
+                self.game_validation.validate(state, prob, quality, timestamp)
+        except:
             return False
-        next_board = Board(array=m,
-                           player=self.board.current_player.opposite())
-        turn = self.board.get_turn(next_board)
-        if turn:
-            self.turns.append(turn)
-            self.board = next_board
-            return True
-        return False
+        return True
 
-    def get_turn(self) -> Turn:
+    async def get_move(self) -> (Move | None):
         '''
-        get_turn() -> Turn
+        get_move() -> Move
 
-        Returns last unprocessed turn
+        Returns last unprocessed move
         '''
-        old_it = self.turn_iterator
-        self.turn_iterator += 1
-        return self.turns[old_it]
+        while True:
+            try:
+                async with self.lock:
+                    move = self.game_validation.get_move()
+            except:
+                return None
+            if move:
+                self.moves.append(move)
+                return move
+            else:
+                await asyncio.sleep(0)
