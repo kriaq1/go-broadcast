@@ -8,6 +8,8 @@ from .board_state import get_board_state
 from .feature_extractor import linear_perspective
 from .preprocessing import padding
 
+import math
+
 
 class StateRecognition:
     def __init__(self, save_path_search: str, save_path_detect: str, device):
@@ -49,6 +51,20 @@ class StateRecognition:
         return board_state, probabilities, self.segmentation_quality
 
 
+def get_sin(a, b, c):
+    ang = math.atan2(c[1] - b[1], c[0] - b[0]) - math.atan2(a[1] - b[1], a[0] - b[0])
+    return math.sin(ang)
+
+
+def get_angle_quality(coordinates):
+    coordinates = coordinates.tolist()
+    sin1 = get_sin(coordinates[0], coordinates[1], coordinates[2])
+    sin2 = get_sin(coordinates[1], coordinates[2], coordinates[3])
+    sin3 = get_sin(coordinates[2], coordinates[3], coordinates[0])
+    sin4 = get_sin(coordinates[3], coordinates[0], coordinates[1])
+    return min(sin1, sin2, sin3, sin4)
+
+
 def get_segmentation_quality(mask, coordinates, min_area=361):
     points = np.array(coordinates)
     square_mask = np.zeros(mask.shape[:2])
@@ -60,4 +76,5 @@ def get_segmentation_quality(mask, coordinates, min_area=361):
     sum_area = area1 + area2
     if area1 < min_area:
         return 0
-    return intersection / sum_area
+    angle_quality = get_angle_quality(coordinates)
+    return 0.5 * intersection / sum_area + 0.5 * angle_quality
