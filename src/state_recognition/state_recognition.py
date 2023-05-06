@@ -77,4 +77,4 @@ def get_segmentation_quality(mask, coordinates, min_area=361):
     if area1 < min_area:
         return 0
     angle_quality = get_angle_quality(coordinates)
-    return 0.5 * intersection / sum_area + 0.5 * angle_quality
+    return 0.5 * intersection / sum_area + 0.5 * angle_quality ** 4
