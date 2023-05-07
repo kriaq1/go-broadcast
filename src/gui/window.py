@@ -1,3 +1,4 @@
+import sys
 import time
 import numpy as np
 from . import utils
@@ -10,13 +11,14 @@ from .controller import Controller
 
 
 class Window(QtWidgets.QMainWindow):
-    def __init__(self, controller: Controller | None = None, cache_path=None):
+    def __init__(self, controller: Controller | None = None, cache_path=None, global_timestamp=None):
         QtWidgets.QMainWindow.__init__(self)
         # setup
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.stop_recognition_button.setEnabled(False)
         self.controller = controller
+        self.global_timestamp = global_timestamp
         self.set_connections()
         # combo box
         self.sources = [None]
@@ -71,8 +73,8 @@ class Window(QtWidgets.QMainWindow):
     @pyqtSlot()
     def start_recognition(self):
         self.block_choice = True
-        if self.controller:
-            self.controller.update_recognition_parameters(source=self.stream_capture)
+        if self.controller is not None and self.stream_capture is not None:
+            self.controller.update_recognition_parameters(source=self.stream_capture.copy())
         self.ui.stop_recognition_button.setEnabled(True)
         self.ui.start_recognition_button.setEnabled(False)
         self.ui.choose_source_box.setEnabled(False)
@@ -80,7 +82,7 @@ class Window(QtWidgets.QMainWindow):
     @pyqtSlot()
     def stop_recognition(self):
         self.block_choice = False
-        if self.controller:
+        if self.controller is not None:
             self.controller.update_recognition_parameters(source=StreamClosed())
         self.ui.start_recognition_button.setEnabled(True)
         self.ui.choose_source_box.setEnabled(True)
@@ -88,11 +90,11 @@ class Window(QtWidgets.QMainWindow):
 
     @pyqtSlot()
     def set_current_state(self):
-        print("aboba")
+        print("set current state")
 
     @pyqtSlot()
     def set_points(self):
-        print("aboba")
+        print("set points")
 
     @pyqtSlot()
     def use_previous_points(self):
@@ -108,23 +110,25 @@ class Window(QtWidgets.QMainWindow):
 
     @pyqtSlot()
     def save_sgf(self):
-        print("aboba")
+        print("save sgf")
 
     @pyqtSlot(int)
     def choose_source(self, id):
         if id == self.current_source:
             return
+        self.contour_points = None
         if id == 0:
-            self.stream_capture = StreamClosed()
+            self.stream_capture = None
         else:
-            self.stream_capture = StreamSaver(self.sources[id], save_path=self.cache_path)
-        if self.controller:
-            self.controller.update_recognition_parameters(source=self.stream_capture)
+            del self.stream_capture
+            self.stream_capture = StreamSaver(self.sources[id], save_path=self.cache_path,
+                                              global_timestamp=self.global_timestamp)
+            self.controller.update_recognition_parameters(source=StreamClosed())
         self.current_source = id
 
     @pyqtSlot()
     def change_percentage(self):
-        print(self.ui.horizontal_slider.value())
+        pass
 
     @pyqtSlot()
     def read_stream_capture(self):
@@ -157,8 +161,8 @@ class Window(QtWidgets.QMainWindow):
         self.stream_image = image
         if self.controller:
             self.contour_points = self.controller.last_coordinates(self.stream_image.shape)
-        if self.contour_points:
-            self.stream_image = utils.draw_contours(self.stream_image, self.contour_points, thickness=1)
+        if self.contour_points is not None:
+            self.stream_image = utils.draw_contours(self.stream_image, self.contour_points, thickness=3)
         label_shape = (self.ui.stream_label.height(), self.ui.stream_label.width())
         padded = utils.padding(self.stream_image, shape=label_shape)
         pixmap = utils.convert_cv_qt(padded)
@@ -189,6 +193,9 @@ class Window(QtWidgets.QMainWindow):
                                                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         if close == QtWidgets.QMessageBox.Yes:
             event.accept()
+            del self.stream_capture
+            del self.controller
             self.stream_capture = None
+            self.controller = None
         else:
             event.ignore()

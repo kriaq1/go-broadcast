@@ -34,6 +34,9 @@ class StreamCapture(ABC):
     def release(self):
         pass
 
+    def copy(self):
+        return self
+
     def __del__(self):
         self.release()
 
@@ -133,7 +136,10 @@ def read_and_save_source(milliseconds, shared_ndarray, source, save_path, start_
 
 
 class StreamSaver(StreamCapture):
-    def __init__(self, source, save_path=None, fps_save=0.1, fps_update=20, shared_name='ndarray'):
+    def __init__(self, source, save_path=None, fps_save=0.1, fps_update=20, shared_name='ndarray',
+                 global_timestamp=None, need_empty: bool = False):
+        if need_empty:
+            return
         cap = cv2.VideoCapture(source)
         res, frame = cap.read()
         if not cap.isOpened() or not res:
@@ -146,7 +152,10 @@ class StreamSaver(StreamCapture):
         self.save_path = save_path
         self.fps_save = fps_save
         self.fps_update = fps_update
-        self.milliseconds = Value('i', 0)
+        if global_timestamp is None:
+            self.milliseconds = Value('i', 0)
+        else:
+            self.milliseconds = global_timestamp
         self.shared_name = shared_name
         self.shared_buffer = create_shared_memory_nparray(frame, shared_name)
         self.shared_ndarray = np.ndarray(frame.shape, dtype=frame.dtype, buffer=self.shared_buffer.buf)
@@ -184,6 +193,20 @@ class StreamSaver(StreamCapture):
         if self.save_path is not None:
             release_frames(self.save_path)
             self.save_path = None
+
+    def copy(self):
+        result = StreamSaver(source=None, need_empty=True)
+        result.save_path = self.save_path
+        result.fps_save = self.fps_save
+        result.fps_update = self.fps_update
+        result.shared_buffer = self.shared_buffer
+        result.shared_ndarray = self.shared_ndarray
+        result.release = release
+        return result
+
+
+def release():
+    pass
 
 
 class StreamClosed(StreamCapture):

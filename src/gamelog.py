@@ -1,21 +1,22 @@
 from .game_validation import Move, GameValidation
+from .game_validation import utils
 import numpy as np
 import asyncio
 
 
 class GameLog:
-    def __init__(self):
-        self.game_validation = GameValidation()
-        self.lock = asyncio.Lock()
+    def __init__(self, initial_state=np.zeros((19, 19), dtype=int)):
+        self.game_validation = GameValidation(initial_state)
         self.moves: list[Move] = []
+        self.state = initial_state.copy()
+        self.val = np.zeros((19, 19), dtype=int)
 
-    async def append_state(self, state: np.ndarray, prob: np.ndarray, quality: float, timestamp: float) -> bool:
+    def append_state(self, state: np.ndarray, prob: np.ndarray, quality: float, timestamp: float) -> bool:
         '''
         append_state
         '''
         try:
-            async with self.lock:
-                self.game_validation.validate(state, prob, quality, timestamp)
+            self.game_validation.validate(state, prob, quality, timestamp)
         except:
             return False
         return True
@@ -28,12 +29,15 @@ class GameLog:
         '''
         while True:
             try:
-                async with self.lock:
-                    move = self.game_validation.get_move()
-            except:
+                move = self.game_validation.get_move()
+            except Exception:
                 return None
-            if move:
+            if move is not None:
                 self.moves.append(move)
+                self.state = utils.set_move(self.state, move)
+                self.val[move.x][move.y] = len(self.moves)
                 return move
-            else:
-                await asyncio.sleep(0)
+            await asyncio.sleep(0)
+
+    def get_state(self) -> tuple[np.ndarray, np.ndarray | None]:
+        return self.state, self.val

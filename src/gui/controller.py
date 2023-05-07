@@ -13,7 +13,8 @@ class Point(Structure):
 
 
 class Controller:
-    def __init__(self, save_path_search: str, save_path_detect: str, device: str = 'cpu'):
+    def __init__(self, save_path_search: str, save_path_detect: str, device: str, global_timestamp):
+        self.global_timestamp = global_timestamp
         self.shared_coordinates: Array = Array(Point, [(-1, -1), (-1, -1), (-1, -1), (-1, -1)])
         self.shared_board_state: Array = Array('i', [0] * 19 * 19)
         self.shared_values: Array = Array('i', [0] * 19 * 19)
@@ -28,7 +29,9 @@ class Controller:
                       shared_board_state=self.shared_board_state,
                       moves_queue=self.moves_queue,
                       recognition_parameters_queue=self.recognition_parameters_queue,
-                      gamelog_parameters_queue=self.gamelog_parameters_queue)
+                      gamelog_parameters_queue=self.gamelog_parameters_queue,
+                      global_timestamp=global_timestamp)
+
         self.p = multiprocessing.Process(target=run_controller, kwargs=kwargs)
         self.p.start()
         self.recognition_kwargs = dict(source=None,
@@ -47,6 +50,8 @@ class Controller:
     def update_recognition_parameters(self, **kwargs):
         for key in kwargs.keys():
             self.recognition_kwargs[key] = kwargs[key]
+        if self.recognition_kwargs['source'] is not None:
+            self.recognition_kwargs['source'] = self.recognition_kwargs['source'].copy()
         self.recognition_parameters_queue.put(self.recognition_kwargs)
 
     def update_gamelog_parameters(self, **kwargs):
@@ -55,7 +60,7 @@ class Controller:
         self.gamelog_parameters_queue.put(self.gamelog_kwargs)
 
     def last_coordinates(self, shape) -> np.ndarray:
-        points = np.array(self.shared_coordinates, dtype=int)
+        points = np.array([[p.x, p.y] for p in self.shared_coordinates[:]], dtype=int)
         return utils.unpadding_points(points, shape=shape, padded_shape=self.padded_size)
 
     def last_board_state(self) -> tuple[np.ndarray, np.ndarray | None]:
@@ -67,3 +72,7 @@ class Controller:
     def get_recognition_state(self, image):
         source = StreamImage(image)
         self.update_recognition_parameters(source=source)
+
+    def __del__(self):
+        self.p.terminate()
+        self.p.join()

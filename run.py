@@ -1,16 +1,18 @@
-from src.app import App
-from src.asciiapi import ASCIIDump
-import torch
-import pathlib
+from PyQt5.QtWidgets import QApplication
+import sys
+from multiprocessing import Value
 
+app = QApplication(sys.argv)
+from src.gui import Controller
+from src.gui import Window
 
-working_path = str(pathlib.Path(__file__).parent.resolve())
+global_timestamp = Value('i', 0)
 
-app = App(
-    [ASCIIDump("/tmp/gotest")],
-    working_path + '/configs/model_saves/segmentation.pth',
-    working_path + '/configs/model_saves/yolo8s.pt',
-    torch.device('cpu')
-)
+controller = Controller("src/state_recognition/model_saves/segmentation18.pth",
+                        "src/state_recognition/model_saves/yolo8n_320.pt", device='cpu',
+                        global_timestamp=global_timestamp)
 
-app.start()
+window = Window(controller=controller, global_timestamp=global_timestamp)
+del controller
+window.show()
+sys.exit(app.exec_())

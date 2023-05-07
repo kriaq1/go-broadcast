@@ -7,7 +7,7 @@ from multiprocessing import Process, Queue, Array
 from ctypes import Structure, c_int
 
 from .state_recognition.state_recognition import StateRecognition
-from .stream_capture import StreamCapture
+from .stream_capture import StreamCapture, StreamSaver
 
 
 class RecognitionError(Exception):
@@ -100,8 +100,9 @@ class Point(Structure):
     _fields_ = [('x', c_int), ('y', c_int)]
 
 
-def run_stream_recognition(queue_recognize, queue_update_parameters, coordinates, init_parameters):
+def run_stream_recognition(queue_recognize, queue_update_parameters, coordinates, global_timestamp, init_parameters):
     try:
+        init_parameters['source'].milliseconds = global_timestamp
         stream_recognition = StreamRecognition(**init_parameters)
     except LoadError:
         print('Load Error', file=sys.stderr)
@@ -134,6 +135,12 @@ def run_stream_recognition(queue_recognize, queue_update_parameters, coordinates
         while not queue_update_parameters.empty():
             try:
                 parameters = queue_update_parameters.get_nowait()
+                if 'source' in parameters.keys() and isinstance(parameters['source'], StreamSaver):
+                    parameters['source'].milliseconds = global_timestamp
+                    shape = parameters['source'].shared_ndarray.shape
+                    dtype = parameters['source'].shared_ndarray.dtype
+                    buffer = parameters['source'].shared_buffer.buf
+                    parameters['source'].shared_ndarray = np.ndarray(shape=shape, dtype=dtype, buffer=buffer)
                 stream_recognition.update_parameters(**parameters)
             except Exception:
                 break
@@ -145,12 +152,12 @@ class StreamRecognitionProcess:
                  source: StreamCapture,
                  save_path_search: str,
                  save_path_detect: str,
-                 device: str = 'cpu', ):
+                 device: str = 'cpu', global_timestamp=None):
         init = dict(source=source, save_path_search=save_path_search, save_path_detect=save_path_detect, device=device)
         self.queue_recognize = Queue()
         self.queue_update_parameters = Queue()
         self.coordinates = Array(Point, [(0, 0), (0, 0), (0, 0), (0, 0)])
-        args = (self.queue_recognize, self.queue_update_parameters, self.coordinates, init)
+        args = (self.queue_recognize, self.queue_update_parameters, self.coordinates, global_timestamp, init)
         self.p = Process(target=run_stream_recognition, args=args)
         self.p.start()
 

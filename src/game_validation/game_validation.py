@@ -1,44 +1,85 @@
 import numpy as np
-from .game_accumulator import GameAccumulator
-from .scenarios_handler import ScenariosHandler
-from .types import Move
+from .move import Move
+from .container import BoardStateContainer
+from .validator import BoardStateValidator
+from .restorer import MoveRestorer
 
 
 class GameValidation:
-    def __init__(self, board: np.ndarray = np.zeros((19, 19), dtype=int),
-                 current_player=-1,
-                 accumulating_time=2 * 1000,
-                 accumulating_thresh=0.4,
-                 max_empties_count=50,
-                 max_border_empties_count=12,
-                 preprocess_coef=0.5,
-                 check_move_thresh=0.0,
-                 confident_time=30 * 1000,
-                 minimal_time_length=1 * 1000,
-                 ):
-        self.game_accumulator = GameAccumulator(accumulating_time=accumulating_time,
-                                                accumulating_thresh=accumulating_thresh,
-                                                max_empties_count=max_empties_count,
-                                                max_border_empties_count=max_border_empties_count,
-                                                preprocess_coef=preprocess_coef,
-                                                check_move_thresh=check_move_thresh)
-        self.scenarios_handler = ScenariosHandler(game_accumulator=self.game_accumulator,
-                                                  board=board,
-                                                  current_player=current_player,
-                                                  confident_time=confident_time,
-                                                  minimal_time_length=minimal_time_length)
+    def __init__(self, initial_state: np.ndarray):
+        self.container = BoardStateContainer()
+        self.validator = BoardStateValidator(self.container, initial_state=initial_state)
+        self.restorer = MoveRestorer(self.container)
+        self.move_groups = []
+        self.index = 0
+        self.group_index = 0
+        self.delay = 1
 
-    def validate(self, state: np.ndarray, prob: np.ndarray, quality: float, timestamp: float):
-        self.game_accumulator.accumulate(state=state, prob=prob, timestamp=timestamp)
-        accumulated = self.game_accumulator.get_accumulated()
-        if accumulated is None:
+        moves, not_deleted = self.restorer.restore(0, 0, np.zeros((19, 19), dtype=int), initial_state)
+        if moves:
+            self.move_groups.append(moves)
+
+    def accept(self, state, prob, quality):
+        if np.sum(prob == 0) > 50:
+            return False
+        return True
+
+    def preprocess(self, state, prob):
+        prob = expand_zeros(prob, 0.25)
+        return state, prob
+
+    def validate(self, state, prob, quality, timestamp):
+        if not self.accept(state, prob, quality):
             return
-        self.scenarios_handler.validate(*accumulated)
+        state, prob = self.preprocess(state, prob)
+        self.container.push(state, prob, timestamp)
+        prev_true_state, prev_timestamp = self.validator.get_true_state()
+        true_state, timestamp = self.validator.update_true_state()
+        if true_state is None:
+            return
+        moves, not_deleted = self.restorer.restore(prev_timestamp, timestamp, prev_true_state, true_state)
+        if moves is None:
+            pass
+        if not_deleted:
+            ok = np.zeros(len(not_deleted), dtype=bool)
+            approved = []
+            for i in range(min(self.delay, len(self.move_groups))):
+                approved.append([])
+                for index, stone in enumerate(not_deleted):
+                    for move in self.move_groups[-i]:
+                        if not ok[index] and stone[0] == move.x and stone[1] == move.y and stone[2] == move.color:
+                            ok[index] = True
+                        else:
+                            approved[-1].append(move)
+            if np.all(ok):
+                for i in range(min(self.delay, len(self.move_groups))):
+                    self.move_groups[-i] = approved[i]
+            else:
+                moves = []
+        if moves:
+            self.move_groups.append(moves)
 
-    def get_move(self) -> (Move | None):
-        move = self.scenarios_handler.get_move()
-        if move is not None:
-            self.game_accumulator.pop_until(move.timestamp)
-            return move
-        else:
+    def get_move(self):
+        if self.group_index + self.delay >= len(self.move_groups):
             return None
+        move = self.move_groups[self.group_index][self.index]
+        self.index = self.index + 1
+        if self.index == len(self.move_groups[self.group_index]):
+            self.index = 0
+            self.group_index = self.group_index + 1
+        return move
+
+    def get_last_move_groups(self):
+        if self.move_groups and self.delay:
+            return self.move_groups[-min(self.delay, len(self.move_groups)):]
+
+
+def expand_zeros(prob, coef):
+    mask = np.pad((prob == 0), ((1, 1), (1, 1)), 'constant', constant_values=False)
+    result = mask.copy()
+    for shift0 in [-1, 0, 1]:
+        for shift1 in [-1, 0, 1]:
+            rolled_mask = np.roll(np.roll(mask, shift=shift0, axis=0), shift=shift1, axis=1)
+            result = result | rolled_mask
+    prob[result[1:-1, 1:-1]] *= coef
+    return prob
