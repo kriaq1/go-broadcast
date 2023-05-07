@@ -11,7 +11,8 @@ from .controller import Controller
 
 
 class Window(QtWidgets.QMainWindow):
-    def __init__(self, controller: Controller | None = None, cache_path=None, global_timestamp=None):
+    def __init__(self, controller: Controller = None,
+                 cache_path=None, global_timestamp=None, fps_save=0.1, fps_update=20):
         QtWidgets.QMainWindow.__init__(self)
         # setup
         self.ui = Ui_MainWindow()
@@ -26,8 +27,11 @@ class Window(QtWidgets.QMainWindow):
         self.block_choice = False
         self.sources_names = [self.ui.choose_source_box.currentText()]
         self.set_available_cameras()
-        # steam image
+        # stream saver
         self.cache_path = cache_path
+        self.fps_save = fps_save
+        self.fps_update = fps_update
+        # stream image
         self.stream_image = 255 * np.ones((256, 256, 3), dtype=np.uint8)
         self.contour_points = [[20, 20], [20, 100], [100, 100], [100, 20]]
         self.update_stream_image(self.stream_image)
@@ -105,7 +109,8 @@ class Window(QtWidgets.QMainWindow):
     @pyqtSlot()
     def use_previous_points(self):
         if self.ui.previous_points_box.isChecked():
-            self.controller.update_recognition_parameters(mode='prev')
+            points = self.controller.last_coordinates((1024, 1024))
+            self.controller.update_recognition_parameters(mode='given', points=points)
         else:
             self.controller.update_recognition_parameters(mode=None)
 
@@ -131,6 +136,7 @@ class Window(QtWidgets.QMainWindow):
         else:
             del self.stream_capture
             self.stream_capture = StreamSaver(self.sources[id], save_path=self.cache_path,
+                                              fps_save=self.fps_save, fps_update=self.fps_update,
                                               global_timestamp=self.global_timestamp)
             self.controller.update_recognition_parameters(source=StreamClosed())
         self.current_source = id

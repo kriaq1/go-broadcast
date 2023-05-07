@@ -42,18 +42,21 @@ class GameValidation:
             pass
         if not_deleted:
             ok = np.zeros(len(not_deleted), dtype=bool)
-            approved = []
-            for i in range(min(self.delay, len(self.move_groups))):
-                approved.append([])
-                for index, stone in enumerate(not_deleted):
-                    for move in self.move_groups[-i]:
+            remaining = []
+            for i in range(1, min(self.delay, len(self.move_groups)) + 1):
+                remaining.append([])
+                for move in self.move_groups[-i]:
+                    keep = True
+                    for index, stone in enumerate(not_deleted):
                         if not ok[index] and stone[0] == move.x and stone[1] == move.y and stone[2] == move.color:
                             ok[index] = True
-                        else:
-                            approved[-1].append(move)
+                            keep = False
+                            break
+                    if keep:
+                        remaining[-1].append(move)
             if np.all(ok):
-                for i in range(min(self.delay, len(self.move_groups))):
-                    self.move_groups[-i] = approved[i]
+                for i in range(1, min(self.delay, len(self.move_groups)) + 1):
+                    self.move_groups[-i] = remaining[i - 1]
             else:
                 moves = []
         if moves:

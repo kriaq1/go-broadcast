@@ -65,7 +65,10 @@ class ControllerProcess:
             move = await self.game_log.get_move()
             if move is None:
                 continue
-            self.sgf.add(move.x, move.y, move.color)
+            try:
+                self.sgf.add(move.x, move.y, move.color)
+            except Exception:
+                print('SGF Error', file=sys.stderr)
             self.sgf.save(path=self.save_path_sgf)
             self.moves_queue.put(move)
             state, val = self.game_log.get_state()

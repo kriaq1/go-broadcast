@@ -14,7 +14,7 @@ controller = Controller(save_path_search="src/state_recognition/model_saves/segm
                         device='cpu',
                         global_timestamp=global_timestamp)
 
-window = Window(controller=controller, global_timestamp=global_timestamp)
+window = Window(controller=controller, global_timestamp=global_timestamp, cache_path='temp/', fps_save=0.1)
 del controller
 window.show()
 sys.exit(app.exec_())
