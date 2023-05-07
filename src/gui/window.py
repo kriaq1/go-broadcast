@@ -6,7 +6,7 @@ from .ui_mainwindow import Ui_MainWindow
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSlot, QTimer
 from PyQt5.QtMultimedia import QCameraInfo
-from ..stream_capture import StreamCapture, StreamSaver, StreamClosed
+from ..stream_capture import StreamCapture, StreamSaver, StreamClosed, StreamImage
 from .controller import Controller
 
 
@@ -74,6 +74,7 @@ class Window(QtWidgets.QMainWindow):
     def start_recognition(self):
         self.block_choice = True
         if self.controller is not None and self.stream_capture is not None:
+            self.controller.update_gamelog_parameters(delay=1)
             self.controller.update_recognition_parameters(source=self.stream_capture.copy())
         self.ui.stop_recognition_button.setEnabled(True)
         self.ui.start_recognition_button.setEnabled(False)
@@ -83,6 +84,7 @@ class Window(QtWidgets.QMainWindow):
     def stop_recognition(self):
         self.block_choice = False
         if self.controller is not None:
+            self.controller.update_gamelog_parameters(delay=0)
             self.controller.update_recognition_parameters(source=StreamClosed())
         self.ui.start_recognition_button.setEnabled(True)
         self.ui.choose_source_box.setEnabled(True)
@@ -90,7 +92,11 @@ class Window(QtWidgets.QMainWindow):
 
     @pyqtSlot()
     def set_current_state(self):
-        print("set current state")
+        res, frame, timestamp = self.stream_capture.read()
+        if not res:
+            return
+        self.controller.clear_validation()
+        self.controller.update_recognition_parameters(source=StreamImage(frame))
 
     @pyqtSlot()
     def set_points(self):
@@ -98,7 +104,10 @@ class Window(QtWidgets.QMainWindow):
 
     @pyqtSlot()
     def use_previous_points(self):
-        print("previous points")
+        if self.ui.previous_points_box.isChecked():
+            self.controller.update_recognition_parameters(mode='prev')
+        else:
+            self.controller.update_recognition_parameters(mode=None)
 
     @pyqtSlot()
     def add_source(self):

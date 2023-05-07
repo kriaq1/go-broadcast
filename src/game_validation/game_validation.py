@@ -67,11 +67,24 @@ class GameValidation:
         if self.index == len(self.move_groups[self.group_index]):
             self.index = 0
             self.group_index = self.group_index + 1
-        return move
+        return Move(x=move.y + 1, y=move.x + 1, color=move.color, timestamp=move.timestamp)
 
     def get_last_move_groups(self):
         if self.move_groups and self.delay:
-            return self.move_groups[-min(self.delay, len(self.move_groups)):]
+            result = self.self.move_groups[-min(self.delay, len(self.move_groups)):]
+            return [Move(x=move.y + 1, y=move.x + 1, color=move.color, timestamp=move.timestamp) for move in result]
+
+    def update_parameters(self,
+                          delay: int = 1,
+                          appearance_count: int = 3,
+                          valid_time: int = 3 * 1000,
+                          valid_zeros_count: int = 20,
+                          valid_thresh: float = 0.2, ):
+        self.delay = delay
+        self.restorer.appearance_count = appearance_count
+        self.validator.valid_time = valid_time
+        self.validator.valid_zeros_count = valid_zeros_count
+        self.validator.valid_thresh = valid_thresh
 
 
 def expand_zeros(prob, coef):

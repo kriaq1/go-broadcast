@@ -7,7 +7,7 @@ from .utils import check_correct, delete_captured
 class MoveRestorer:
     def __init__(self, container: BoardStateContainer):
         self.container = container
-        self.color = -1
+        self.prev_color = 1
         self.appearance_count = 3
 
     def preprocess_sequence(self, sequence, state_start, state_end):
@@ -48,12 +48,12 @@ class MoveRestorer:
             state[x][y] = color
             delete_captured(state, -color)
         if moves:
-            prev_color = self.color
+            prev_color = self.prev_color
             for i in range(len(moves) - 1):
                 if moves[i].timestamp == moves[i + 1].timestamp and moves[i].color == prev_color:
                     moves[i], moves[i + 1] = moves[i + 1], moves[i]
                 prev_color = moves[i].color
-            self.color = moves[-1].color
+            self.prev_color = moves[-1].color
         not_deleted = np.where(state != state_end)
         not_deleted = list(zip(*not_deleted))
         not_deleted = [(x, y, state[x][y]) for (x, y) in not_deleted]

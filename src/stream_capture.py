@@ -136,8 +136,14 @@ def read_and_save_source(milliseconds, shared_ndarray, source, save_path, start_
 
 
 class StreamSaver(StreamCapture):
-    def __init__(self, source, save_path=None, fps_save=0.1, fps_update=20, shared_name='ndarray',
-                 global_timestamp=None, need_empty: bool = False):
+    def __init__(self,
+                 source,
+                 save_path=None,
+                 fps_save=0.1,
+                 fps_update=20,
+                 shared_name='ndarray',
+                 global_timestamp=None,
+                 need_empty: bool = False):
         if need_empty:
             return
         cap = cv2.VideoCapture(source)
@@ -194,18 +200,21 @@ class StreamSaver(StreamCapture):
             release_frames(self.save_path)
             self.save_path = None
 
-    def copy(self):
+    def copy(self, milliseconds=None):
         result = StreamSaver(source=None, need_empty=True)
         result.save_path = self.save_path
         result.fps_save = self.fps_save
         result.fps_update = self.fps_update
         result.shared_buffer = self.shared_buffer
         result.shared_ndarray = self.shared_ndarray
-        result.release = release
+        shape, dtype, buffer = self.shared_ndarray.shape, self.shared_ndarray.dtype, self.shared_buffer.buf
+        result.shared_ndarray = np.ndarray(shape=shape, dtype=dtype, buffer=buffer)
+        result.milliseconds = milliseconds
+        result.release = empty_release
         return result
 
 
-def release():
+def empty_release():
     pass
 
 
@@ -227,15 +236,17 @@ class StreamClosed(StreamCapture):
 
 
 class StreamImage(StreamCapture):
-    def __init__(self, image):
+    def __init__(self, image, max_time=10000, period=1000):
         self.image = image
-        self.closed = False
+        self.current_time = 0
+        self.max_time = max_time
+        self.period = period
 
     def read(self):
-        if not self.closed:
-            self.closed = True
-            return True, self.image, 0
-        return False, None, 0
+        if self.current_time >= self.max_time:
+            return False, None, 0
+        self.current_time += self.period
+        return True, self.image, self.current_time
 
     def get(self, timestamp):
         return True, self.image

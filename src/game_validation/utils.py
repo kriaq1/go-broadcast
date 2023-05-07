@@ -49,7 +49,7 @@ def check_correct(board, color=0):
 
 
 def set_move(board, move: Move):
-    if board[move.x][move.y] == 0:
-        board[move.x][move.y] = move.color
+    if board[move.y - 1][move.x - 1] == 0:
+        board[move.y - 1][move.x - 1] = move.color
         delete_captured(board, -move.color)
     return board
