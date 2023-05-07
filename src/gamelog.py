@@ -1,43 +1,52 @@
-from .board import Board, Turn
+from .game_validation import Move, GameValidation
+from .game_validation import utils
 import numpy as np
+import asyncio
 
 
 class GameLog:
-    def __init__(self):
-        self.board = Board()
-        self.turns: list[Turn] = []
-        self.turn_iterator = 0
+    def __init__(self, initial_state=np.zeros((19, 19), dtype=int)):
+        self.game_validation = GameValidation(initial_state)
+        self.moves: list[Move] = []
+        self.state = initial_state.copy()
+        self.val = np.zeros((19, 19), dtype=int)
 
-    def apply_matrix(self, m: np.ndarray) -> bool:
+    def append_state(self, state: np.ndarray, prob: np.ndarray, quality: float, timestamp: float):
         '''
-        apply_matrix(m: np.ndarray) -> bool
-
-        Tries to apply go matrix
-        from recognition component in order
-        to extract turn.
-
-        Returns true, if extraction was complete,
-        otherwise false
+        append_state
         '''
-        assert m.ndim() == 2
+        try:
+            self.game_validation.validate(state, prob, quality, timestamp)
+        except Exception:
+            pass
 
-        if self.board.to_numpy() == m:
-            return False
-        next_board = Board(array=m,
-                           player=self.board.current_player.opposite())
-        turn = self.board.get_turn(next_board)
-        if turn:
-            self.turns.append(turn)
-            self.board = next_board
-            return True
-        return False
-
-    def get_turn(self) -> Turn:
+    async def get_move(self) -> (Move | None):
         '''
-        get_turn() -> Turn
+        get_move() -> Move
 
-        Returns last unprocessed turn
+        Returns last unprocessed move
         '''
-        old_it = self.turn_iterator
-        self.turn_iterator += 1
-        return self.turns[old_it]
+        while True:
+            try:
+                move = self.game_validation.get_move()
+            except Exception:
+                return None
+            if move is not None:
+                self.moves.append(move)
+                self.state = utils.set_move(self.state, move)
+                self.val[move.y - 1][move.x - 1] = len(self.moves)
+                return move
+            await asyncio.sleep(0)
+
+    def get_state(self) -> tuple[np.ndarray, np.ndarray]:
+        return self.state, self.val
+
+    def update_parameters(self,
+                          initial_state: np.ndarray = None,
+                          **kwargs):
+        if initial_state is not None:
+            self.game_validation = GameValidation(initial_state)
+            self.moves = []
+            self.state = initial_state.copy()
+            self.val = np.zeros((19, 19), dtype=int)
+        self.game_validation.update_parameters(**kwargs)

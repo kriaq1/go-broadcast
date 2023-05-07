@@ -7,7 +7,7 @@ from multiprocessing import Process, Queue, Array
 from ctypes import Structure, c_int
 
 from .state_recognition.state_recognition import StateRecognition
-from .stream_capture import StreamCapture
+from .stream_capture import StreamCapture, StreamSaver
 
 
 class RecognitionError(Exception):
@@ -100,7 +100,7 @@ class Point(Structure):
     _fields_ = [('x', c_int), ('y', c_int)]
 
 
-def run_stream_recognition(queue_recognize, queue_update_parameters, coordinates, init_parameters):
+def run_stream_recognition(queue_recognize, queue_update_parameters, coordinates, global_timestamp, init_parameters):
     try:
         stream_recognition = StreamRecognition(**init_parameters)
     except LoadError:
@@ -115,10 +115,8 @@ def run_stream_recognition(queue_recognize, queue_update_parameters, coordinates
             pass
         except PredictError:
             print('Predict Error', file=sys.stderr)
-            pass
         except Exception:
             print('Recognize Error', file=sys.stderr)
-            break
 
         parent = multiprocessing.parent_process()
         if parent is None or not parent.is_alive():
@@ -134,9 +132,11 @@ def run_stream_recognition(queue_recognize, queue_update_parameters, coordinates
         while not queue_update_parameters.empty():
             try:
                 parameters = queue_update_parameters.get_nowait()
+                if isinstance(parameters['source'], StreamSaver):
+                    parameters['source'] = parameters['source'].copy(global_timestamp)
                 stream_recognition.update_parameters(**parameters)
             except Exception:
-                break
+                pass
     queue_recognize.close()
 
 
@@ -145,12 +145,15 @@ class StreamRecognitionProcess:
                  source: StreamCapture,
                  save_path_search: str,
                  save_path_detect: str,
-                 device: str = 'cpu', ):
-        init = dict(source=source, save_path_search=save_path_search, save_path_detect=save_path_detect, device=device)
+                 device: str = 'cpu',
+                 global_timestamp=None):
         self.queue_recognize = Queue()
         self.queue_update_parameters = Queue()
         self.coordinates = Array(Point, [(0, 0), (0, 0), (0, 0), (0, 0)])
-        args = (self.queue_recognize, self.queue_update_parameters, self.coordinates, init)
+        if global_timestamp is not None:
+            source.milliseconds = global_timestamp
+        init = dict(source=source, save_path_search=save_path_search, save_path_detect=save_path_detect, device=device)
+        args = self.queue_recognize, self.queue_update_parameters, self.coordinates, global_timestamp, init
         self.p = Process(target=run_stream_recognition, args=args)
         self.p.start()
 

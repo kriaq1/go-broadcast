@@ -2,7 +2,9 @@ import cv2
 import numpy as np
 import asyncio
 
-from src.stream_capture import VideoCapture, StreamSaver
+import multiprocessing
+
+from src.stream_capture import VideoCapture, StreamSaver, StreamClosed
 from src.stream_recognition import StreamRecognition, StreamRecognitionProcess
 from src.state_recognition.preprocessing import padding
 
@@ -40,16 +42,18 @@ async def task_while():
 
 async def main():
     save_path_search = '../src/state_recognition/model_saves/segmentation18.pth'
-    save_path_detect = '../src/state_recognition/model_saves/yolo8n.pt'
-    video_path = 'video/1.mp4'
+    save_path_detect = '../src/state_recognition/model_saves/yolo8n_608_1200.pt'
+    video_path = 'video/4.mp4'
 
     device = 'cpu'
     # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     source = StreamSaver(video_path, 'save/videos/1/')
+    global_timestamp = source.milliseconds
     # source.start_time -= 100
-    stream_recognition = StreamRecognitionProcess(source, save_path_search, save_path_detect, device)
-    stream_recognition.update_parameters(search_period=10)
+    stream_recognition = StreamRecognitionProcess(StreamClosed(), save_path_search, save_path_detect, device, global_timestamp)
+    stream_recognition.update_parameters(search_period=4, quality_coefficient=0.975)
+    stream_recognition.update_parameters(source=source.copy())
     # stream_recognition.update_parameters(mode='given', points=np.array([[0, 0], [0, 1023], [1023, 1023], [1023, 0]]))
     task = asyncio.create_task(task_while())
     while True:

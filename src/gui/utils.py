@@ -35,13 +35,13 @@ def unpadding_points(points, shape, padded_shape=(1024, 1024)):
     points = points.astype(np.float64)
     old_height, old_width = shape[0], shape[1]
     if shape[0] * padded_shape[1] <= padded_shape[0] * shape[1]:
-        new_width, new_height = shape[1], shape[1] * old_height // old_width
+        new_width, new_height = padded_shape[1], padded_shape[1] * old_height // old_width
         points -= [0, (padded_shape[0] - new_height) // 2]
-        points *= old_width / shape[1]
+        points *= old_width / new_width
     else:
-        new_width, new_height = shape[0] * old_width // old_height, shape[0]
+        new_width, new_height = padded_shape[0] * old_width // old_height, padded_shape[0]
         points -= [(padded_shape[1] - new_width) // 2, 0]
-        points *= old_width / shape[1]
+        points *= old_height / new_height
     return points.astype(int)
 
 
@@ -89,7 +89,7 @@ def draw_board_state(board: np.ndarray, val=None, empty=None):
                 text_color = (0, 0, 0)
             cv2.circle(empty, (x, y + 2), radius=12, color=shadow_color, thickness=-1)
             cv2.circle(empty, (x, y), radius=12, color=color, thickness=-1)
-            if val:
+            if val is not None:
                 xshift = 5 * len(str(val[j][i]))
                 cv2.putText(empty, str(val[j][i]), (x - xshift, y + 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
                             text_color, 1, cv2.LINE_AA)
