@@ -57,6 +57,9 @@ class GameValidation:
             if np.all(ok):
                 for i in range(1, min(self.delay, len(self.move_groups)) + 1):
                     self.move_groups[-i] = remaining[i - 1]
+                for i in reversed(list(range(1, min(self.delay, len(self.move_groups)) + 1))):
+                    if not self.move_groups[-i]:
+                        del self.move_groups[-i]
             else:
                 moves = []
         if moves:
