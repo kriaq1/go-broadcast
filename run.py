@@ -1,22 +1,3 @@
-# from PyQt5.QtWidgets import QTextEdit
-# from PyQt5 import QtWidgets
-# import sys
-# app = QtWidgets.QApplication(sys.argv)
-#
-# with open("prirol.md") as fd:
-#     text = fd.read(-1)
-#
-# print(type(text))
-# widget = QTextEdit()
-# widget.setMarkdown(text)
-# widget.resize(600, 600)
-#
-# widget.show()
-#
-# sys.exit(app.exec_())
-#
-#
-# raise
 from PyQt5.QtWidgets import QApplication
 import sys
 from multiprocessing import Value
