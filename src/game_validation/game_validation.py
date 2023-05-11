@@ -14,13 +14,14 @@ class GameValidation:
         self.index = 0
         self.group_index = 0
         self.delay = 1
+        self.max_not_recognized_count = 120
 
         moves, not_deleted = self.restorer.restore(0, 0, np.zeros((19, 19), dtype=int), initial_state)
         if moves:
             self.move_groups.append(moves)
 
     def accept(self, state, prob, quality):
-        if np.sum(prob == 0) > 50:
+        if np.sum(prob == 0) > self.max_not_recognized_count:
             return False
         return True
 
