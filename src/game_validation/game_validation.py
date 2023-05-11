@@ -25,6 +25,20 @@ class GameValidation:
         return True
 
     def preprocess(self, state, prob):
+        state = np.pad(state, ((1, 1), (1, 1)), 'constant', constant_values=0)
+        prob = np.pad(prob, ((1, 1), (1, 1)), 'constant', constant_values=0)
+        true_state = self.validator.get_true_state()[0]
+        h, w = true_state.shape
+        best = 0
+        x, y = 0, 0
+        for i in range(state.shape[0] - h + 1):
+            for j in range(state.shape[1] - w + 1):
+                accuracy = np.sum((state[i:i + h, j:j + w] == true_state) & (prob[i:i + h, j:j + w] != 0))
+                if best < accuracy:
+                    best = accuracy
+                    x, y = i, j
+        state = state[x: x + h, y: y + w]
+        prob = prob[x: x + h, y: y + w]
         prob = expand_zeros(prob, 0.25)
         return state, prob
 
@@ -77,8 +91,10 @@ class GameValidation:
 
     def get_last_move_groups(self):
         if self.move_groups and self.delay:
-            result = self.self.move_groups[-min(self.delay, len(self.move_groups)):]
-            return [Move(x=move.y + 1, y=move.x + 1, color=move.color, timestamp=move.timestamp) for move in result]
+            result = self.move_groups[-min(self.delay, len(self.move_groups)):]
+            return [Move(x=move.y + 1, y=move.x + 1, color=move.color, timestamp=move.timestamp) for moves in result for
+                    move in moves]
+        return []
 
     def update_parameters(self,
                           delay: int = 1,

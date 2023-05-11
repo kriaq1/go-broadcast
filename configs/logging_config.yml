@@ -1,0 +1,5 @@
+appearance_count: 3
+delay: 1
+valid_thresh: 0.2
+valid_time: 3000
+valid_zeros_count: 20

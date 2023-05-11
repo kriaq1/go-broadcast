@@ -1,0 +1,7 @@
+conf: 0.4
+iou: 0.5
+max_distance: 0.08223684
+min_distance: 0.03289473
+quality_coefficient: 0.975
+search_period: 4
+seg_threshold: 0.5

@@ -39,7 +39,13 @@ class GameLog:
             await asyncio.sleep(0)
 
     def get_state(self) -> tuple[np.ndarray, np.ndarray]:
-        return self.state, self.val
+        last_moves = self.game_validation.get_last_move_groups()
+        state = self.state.copy()
+        val = self.val.copy()
+        for move in last_moves:
+            state[move.y - 1][move.x - 1] = move.color
+            val[move.y - 1][move.x - 1] = -1
+        return state, val
 
     def update_parameters(self,
                           initial_state: np.ndarray = None,

@@ -573,7 +573,7 @@
      </widget>
     </item>
     <item>
-     <layout class="QGridLayout" name="gridLayout_3" columnstretch="5,0,1,1,0">
+     <layout class="QGridLayout" name="gridLayout_3" columnstretch="5,0,1,1,0,0">
       <property name="topMargin">
        <number>10</number>
       </property>
@@ -610,27 +610,20 @@
         </item>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QToolButton" name="add_source_button">
-        <property name="text">
-         <string>add source</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="3">
-       <spacer name="horizontalSpacer">
+       <spacer name="horizontalSpacer_2">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>40</width>
+          <width>14</width>
           <height>20</height>
          </size>
         </property>
        </spacer>
       </item>
-      <item row="0" column="4">
+      <item row="0" column="5">
        <widget class="QPushButton" name="save_sgf_button">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -649,18 +642,38 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
-       <spacer name="horizontalSpacer_2">
+      <item row="0" column="4">
+       <spacer name="horizontalSpacer">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>14</width>
+          <width>40</width>
           <height>20</height>
          </size>
         </property>
        </spacer>
+      </item>
+      <item row="0" column="1">
+       <widget class="QToolButton" name="add_source_button">
+        <property name="text">
+         <string>add source</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="add_url_button">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>add url</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
@@ -894,10 +907,25 @@
     <property name="title">
      <string>Settings</string>
     </property>
-    <addaction name="actionparameters"/>
+    <widget class="QMenu" name="menuParameters">
+     <property name="title">
+      <string>Parameters</string>
+     </property>
+     <addaction name="actionRecognition"/>
+     <addaction name="actionLogging"/>
+    </widget>
+    <addaction name="menuParameters"/>
+    <addaction name="actionbroadcast"/>
+   </widget>
+   <widget class="QMenu" name="menuInfo">
+    <property name="title">
+     <string>Info</string>
+    </property>
+    <addaction name="actionInfo"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuSettings"/>
+   <addaction name="menuInfo"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionFile">
@@ -905,14 +933,29 @@
     <string>File</string>
    </property>
   </action>
-  <action name="actionparameters">
-   <property name="text">
-    <string>Parameters</string>
-   </property>
-  </action>
   <action name="actionQuit">
    <property name="text">
     <string>Quit</string>
+   </property>
+  </action>
+  <action name="actionRecognition">
+   <property name="text">
+    <string>Recognition</string>
+   </property>
+  </action>
+  <action name="actionLogging">
+   <property name="text">
+    <string>Logging</string>
+   </property>
+  </action>
+  <action name="actionbroadcast">
+   <property name="text">
+    <string>broadcast</string>
+   </property>
+  </action>
+  <action name="actionInfo">
+   <property name="text">
+    <string>Info</string>
    </property>
   </action>
  </widget>

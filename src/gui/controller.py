@@ -22,12 +22,14 @@ class Controller:
         self.recognition_parameters_queue: Queue = Queue()
         self.gamelog_parameters_queue: Queue = Queue()
         self.padded_size = (1024, 1024)
+        self.save_path_sgf = save_path_sgf
         kwargs = dict(save_path_search=save_path_search,
                       save_path_detect=save_path_detect,
                       save_path_sgf=save_path_sgf,
                       device=device,
                       shared_coordinates=self.shared_coordinates,
                       shared_board_state=self.shared_board_state,
+                      shared_values=self.shared_values,
                       moves_queue=self.moves_queue,
                       recognition_parameters_queue=self.recognition_parameters_queue,
                       gamelog_parameters_queue=self.gamelog_parameters_queue,
@@ -69,7 +71,7 @@ class Controller:
         return utils.unpadding_points(points, shape=shape, padded_shape=self.padded_size)
 
     def last_board_state(self) -> tuple[np.ndarray, np.ndarray | None]:
-        return np.resize(np.array(self.shared_board_state), (19, 19)), None
+        return np.resize(np.array(self.shared_board_state), (19, 19)), np.resize(np.array(self.shared_values), (19, 19))
 
     def get_sgf(self) -> SGFAPI:
         pass

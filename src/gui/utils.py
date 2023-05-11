@@ -3,6 +3,31 @@ import numpy as np
 from PyQt5 import QtGui
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
+import yaml
+from yaml.loader import SafeLoader
+import os
+
+
+def dict_by_parameters(parameters):
+    if type(parameters) == str:
+        if os.path.isfile(parameters):
+            with open(parameters, 'r') as fd:
+                parameters = yaml.load(fd, Loader=SafeLoader)
+    return parameters
+
+
+def load_dict(dct, parameters):
+    is_yaml = (type(parameters) == str) and os.path.isfile(parameters)
+    parameters_dict = parameters
+    if is_yaml:
+        with open(parameters, 'r') as fd:
+            parameters_dict = yaml.load(fd, SafeLoader)
+    for key in parameters_dict.keys():
+        if dct[key] is not None:
+            parameters_dict[key] = dct[key]
+    if is_yaml:
+        with open(parameters, 'w') as fd:
+            yaml.dump(parameters_dict, fd)
 
 
 def convert_cv_qt(cv_img):
@@ -45,6 +70,21 @@ def unpadding_points(points, shape, padded_shape=(1024, 1024)):
     return points.astype(int)
 
 
+def padding_points(points, shape, padded_shape=(1024, 1024)):
+    points = points.astype(np.float64)
+    old_height, old_width = shape[0], shape[1]
+    if shape[0] * padded_shape[1] <= padded_shape[0] * shape[1]:
+        new_width, new_height = padded_shape[1], padded_shape[1] * old_height // old_width
+        points *= new_height / old_height
+        points += [0, (padded_shape[0] - new_height) // 2]
+
+    else:
+        new_width, new_height = padded_shape[0] * old_width // old_height, padded_shape[0]
+        points *= new_width / old_width
+        points += [(padded_shape[1] - new_width) // 2, 0]
+    return points.astype(int)
+
+
 def draw_contours(image: np.ndarray, points, color=(0, 0, 255), thickness=2) -> np.ndarray:
     return cv2.drawContours(image, [np.array(points)], -1, color, thickness)
 
@@ -61,6 +101,12 @@ def draw_empty_board():
             x = coords[3 + 6 * i]
             y = coords[3 + 6 * j]
             cv2.circle(empty, (x, y), radius=3, color=(0, 0, 0), thickness=-1)
+    for i, coord in enumerate(coords):
+        char = chr(ord('A') + i + int(i > 7))
+        cv2.putText(empty, char, (coord - 5, 18), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                    (0, 0, 0), 1, cv2.LINE_AA)
+        cv2.putText(empty, str(19 - i), (8 - int(i < 10) * 4, coord + 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                    (0, 0, 0), 1, cv2.LINE_AA)
     return empty
 
 
@@ -89,9 +135,15 @@ def draw_board_state(board: np.ndarray, val=None, empty=None):
                 text_color = (0, 0, 0)
             cv2.circle(empty, (x, y + 2), radius=12, color=shadow_color, thickness=-1)
             cv2.circle(empty, (x, y), radius=12, color=color, thickness=-1)
-            if val is not None:
-                xshift = 5 * len(str(val[j][i]))
-                cv2.putText(empty, str(val[j][i]), (x - xshift, y + 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+            if val is None:
+                continue
+            value = val[j][i]
+            if value > 0:
+                str_value = str(value)
+                xshift = 4 * len(str_value)
+                cv2.putText(empty, str(str_value), (x - xshift, y + 5), cv2.FONT_HERSHEY_SIMPLEX, 0.4,
                             text_color, 1, cv2.LINE_AA)
+            else:
+                cv2.circle(empty, (x, y + 2), radius=12, color=(0, 0, 255), thickness=2)
 
     return empty
