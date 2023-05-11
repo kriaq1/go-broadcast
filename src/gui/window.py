@@ -53,7 +53,7 @@ class Window(QtWidgets.QMainWindow):
         self.set_points_flag = False
         # stream image
         self.stream_image = 255 * np.ones((256, 256, 3), dtype=np.uint8)
-        self.contour_points = np.array([[-1, -1], [-1, -1], [-1, -1], [-1, -1]])
+        self.contour_points = np.array([[-1, -1], [-1, -1], [-1, -1], [-1, -1]]) * 10
         self.update_stream_image(self.stream_image)
         # board image
         self.empty_board_image = utils.draw_empty_board()
