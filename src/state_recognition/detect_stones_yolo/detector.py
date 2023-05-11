@@ -16,10 +16,7 @@ class StoneDetector:
                                      conf=conf,
                                      iou=iou,
                                      max_det=max_det,
-                                     line_width=1,
                                      show=False,
-                                     show_labels=False,
-                                     show_conf=False,
                                      device=device,
                                      mode=mode)
         return results
