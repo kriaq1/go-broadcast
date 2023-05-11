@@ -69,7 +69,7 @@ def create_shared_memory_nparray(data, name):
     release_shared(name)
     np_type = data.dtype
     np_shape = data.shape
-    d_size = np.dtype(np_type).itemsize * np.prod(np_shape)
+    d_size = int(np.dtype(np_type).itemsize * np.prod(np_shape))
     shm = shared_memory.SharedMemory(create=True, size=d_size, name=name)
     dst = np.ndarray(shape=np_shape, dtype=np_type, buffer=shm.buf)
     dst[:] = data[:]
