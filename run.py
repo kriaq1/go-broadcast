@@ -31,7 +31,7 @@ if __name__ == '__main__':
     logging_parameters = "configs/logging_config.yml"
     text_info = ""
     if os.path.isfile("info.md"):
-        with open("info.md") as fd:
+        with open("info.md", encoding="utf8") as fd:
             text_info = fd.read(-1)
     controller = Controller(save_path_search=path + "src/state_recognition/model_saves/segmentation18.pth",
                             save_path_detect=path + "src/state_recognition/model_saves/yolo8n_608_1200.pt",
