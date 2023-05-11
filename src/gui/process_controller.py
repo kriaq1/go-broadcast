@@ -23,6 +23,7 @@ class ControllerProcess:
                  device: str,
                  shared_coordinates: Array,
                  shared_board_state: Array,
+                 shared_values: Array,
                  moves_queue: Queue,
                  recognition_parameters_queue: Queue,
                  gamelog_parameters_queue: Queue,
@@ -31,6 +32,7 @@ class ControllerProcess:
         self.global_timestamp = global_timestamp
         self.shared_coordinates = shared_coordinates
         self.shared_board_state = shared_board_state
+        self.shared_values = shared_values
         self.moves_queue = moves_queue
         self.recognition_parameters_queue = recognition_parameters_queue
         self.gamelog_parameters_queue = gamelog_parameters_queue
@@ -73,6 +75,7 @@ class ControllerProcess:
             self.moves_queue.put(move)
             state, val = self.game_log.get_state()
             self.shared_board_state[:] = np.resize(state, 19 * 19)
+            self.shared_values[:] = np.resize(val, 19 * 19)
 
     async def run_recognition_parameters(self):
         while True:
