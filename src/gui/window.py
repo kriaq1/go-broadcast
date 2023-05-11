@@ -11,26 +11,33 @@ from PyQt5.QtCore import pyqtSlot, QTimer
 from PyQt5.QtMultimedia import QCameraInfo
 from ..stream_capture import StreamCapture, StreamSaver, StreamClosed, StreamImage
 from .controller import Controller
-from .widgets import URLReader, SettingsReader
+from .widgets import URLReader, SettingsReader, InfoWidget
 
 
 class Window(QtWidgets.QMainWindow):
     def __init__(self, controller: Controller = None,
                  cache_path=None, global_timestamp=None, fps_save=0.1, fps_update=20,
-                 recognition_parameters=None, logging_parameters=None, broadcast_parameters=None):
+                 recognition_parameters=None, logging_parameters=None, broadcast_parameters=None, info_text=""):
         QtWidgets.QMainWindow.__init__(self)
         # setup
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.stop_recognition_button.setEnabled(False)
         self.controller = controller
+        # shortcuts
+        self.ui.actionQuit.setShortcut("Ctrl+Q")
+        # url writer
         self.url_writer = URLReader()
+        # sittings
         self.recognition_parameters = recognition_parameters
         self.logging_parameters = logging_parameters
         self.broadcast_parameters = broadcast_parameters
         self.recognition_settings = SettingsReader(utils.dict_by_parameters(recognition_parameters), "recognition")
         self.logging_settings = SettingsReader(utils.dict_by_parameters(logging_parameters), "logging")
         self.broadcast_settings = SettingsReader(utils.dict_by_parameters(broadcast_parameters), "broadcast")
+        # info
+        self.info_widget = InfoWidget(info_text)
+        # global timestamp
         self.global_timestamp = global_timestamp
         self.set_connections()
         # combo box
@@ -81,7 +88,7 @@ class Window(QtWidgets.QMainWindow):
         self.ui.actionRecognition.triggered.connect(self.recognition_parameters_settings)
         self.ui.actionbroadcast.triggered.connect(self.broadcast_parameters_settings)
         self.ui.actionLogging.triggered.connect(self.logging_parameters_settings)
-        self.ui.actionInfo.triggered.connect(self.info_widget)
+        self.ui.actionInfo.triggered.connect(self.show_info_widget)
 
     def quit(self):
         self.close()
@@ -96,8 +103,8 @@ class Window(QtWidgets.QMainWindow):
         self.logging_settings.show()
         print("logging")
 
-    def info_widget(self):
-        print("info widget")
+    def show_info_widget(self):
+        self.info_widget.show()
 
     def update_recognition_parameters(self, parameters):
         self.controller.update_recognition_parameters(**parameters)
@@ -299,6 +306,7 @@ class Window(QtWidgets.QMainWindow):
             self.broadcast_settings.close()
             self.recognition_settings.close()
             self.url_writer.close()
+            self.info_widget.close()
             del self.stream_capture
             del self.controller
             self.stream_capture = None
