@@ -122,6 +122,9 @@ def read_and_save_source(milliseconds, shared_buffer, shape, dtype, source, save
         if not res or parent is None or not parent.is_alive():
             break
         new_timestamp = cap.get(cv2.CAP_PROP_POS_MSEC)
+        current_time = int((time.time() - start_time) * 1000)
+        if new_timestamp - start_timestamp < current_time - 500:
+            new_timestamp = start_timestamp + current_time
         if save_path is not None and new_timestamp - start_timestamp_save >= 1000 / fps_save:
             save_frame(save_path, int(new_timestamp), frame)
             start_timestamp_save = new_timestamp
@@ -130,7 +133,7 @@ def read_and_save_source(milliseconds, shared_buffer, shape, dtype, source, save
                 shared_ndarray[:] = frame[:]
                 milliseconds.value = int(new_timestamp)
             start_timestamp_update = new_timestamp
-        if (time.time() - start_time) * 1000 < new_timestamp - start_timestamp - 500:
+        if current_time < new_timestamp - start_timestamp - 500:
             time.sleep(1 / fps)
 
     cap.release()
