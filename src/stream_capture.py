@@ -106,9 +106,12 @@ def release_frames(save_path):
         os.remove(save_path + file)
 
 
-def read_and_save_source(milliseconds, shared_ndarray, source, save_path, start_timestamp, fps_save, fps_update):
+def read_and_save_source(milliseconds, shared_buffer, shape, dtype, source, save_path, fps_save, fps_update):
+    shared_ndarray = np.ndarray(shape, dtype=dtype, buffer=shared_buffer.buf)
     cap = cv2.VideoCapture(source)
+    cap.read()
     fps = cap.get(cv2.CAP_PROP_FPS)
+    start_timestamp = cap.get(cv2.CAP_PROP_POS_MSEC)
     start_timestamp_save = start_timestamp
     start_timestamp_update = start_timestamp
     fps_save = min(fps_save, fps_update)
@@ -150,7 +153,7 @@ class StreamSaver(StreamCapture):
         res, frame = cap.read()
         if not cap.isOpened() or not res:
             raise StreamClosedException()
-        start = cap.get(cv2.CAP_PROP_POS_MSEC)
+        start = max(cap.get(cv2.CAP_PROP_POS_MSEC), 0)
         cap.release()
         if save_path is not None:
             Path(save_path).mkdir(parents=True, exist_ok=True)
@@ -165,7 +168,7 @@ class StreamSaver(StreamCapture):
         self.shared_name = shared_name
         self.shared_buffer = create_shared_memory_nparray(frame, shared_name)
         self.shared_ndarray = np.ndarray(frame.shape, dtype=frame.dtype, buffer=self.shared_buffer.buf)
-        args = self.milliseconds, self.shared_ndarray, source, save_path, start, fps_save, fps_update
+        args = self.milliseconds, self.shared_buffer, frame.shape, frame.dtype, source, save_path, fps_save, fps_update
         self.p = Process(target=read_and_save_source, args=args)
         self.p.start()
 
