@@ -230,7 +230,7 @@ class Window(QtWidgets.QMainWindow):
             self.controller.update_recognition_parameters(source=StreamClosed())
             self.stream_capture = StreamSaver(self.sources[id], save_path=self.cache_path,
                                               fps_save=self.fps_save, fps_update=self.fps_update,
-                                              global_timestamp=self.global_timestamp)
+                                              global_timestamp=self.global_timestamp, shared_name='ndarray'+str(int(time.time() * 1000)))
 
         self.current_source = id
 
