@@ -30,5 +30,3 @@ def get_checked_corners(gray, pts, u=(21, 21), e=(5, 5), threshold=5 * 10 ** (-6
                 np.abs(np.array(u) // 2 - np.unravel_index(np.argmax(dst), u)) <= np.array(e)):
             corners.append(pt)
     return np.array(corners)
-
-

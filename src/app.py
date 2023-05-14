@@ -1,6 +1,5 @@
 from .gamelog import GameLog
 from .broadcast import Broadcast
-from .board import Board, Turn
 from .state_recognition import StateRecognition
 from .api import API
 
@@ -11,9 +10,11 @@ import asyncio
 
 def trace(f):
     return f
+
     async def wrapper(*args):
         print("Calling", f.__name__)
         return f(*args)
+
     return wrapper
 
 
@@ -22,6 +23,7 @@ def loop(f):
         while True:
             if not await f(*args):
                 return
+
     return wrapper
 
 
@@ -42,6 +44,7 @@ class DataLine:
                 while True:
                     x = f(comp)
                     await q.put(x)
+
             return prod
 
         def make_consumer(f, comp):
@@ -49,6 +52,7 @@ class DataLine:
                 while True:
                     x = await q.get()
                     f(comp, x)
+
             return cons
 
         producers_tasks = [

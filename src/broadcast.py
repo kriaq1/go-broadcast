@@ -1,8 +1,6 @@
 from .board import Turn
 from .api import API
 
-import asyncio
-
 
 class Broadcast:
     __slots__ = ["apis"]

@@ -186,4 +186,3 @@ class Board:
 
     def to_list(self):
         return self._board.tolist()
-
