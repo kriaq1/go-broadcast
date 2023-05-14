@@ -1,17 +1,15 @@
 from PyQt5.QtWidgets import QApplication
 import sys
 from multiprocessing import Value
-
-app = QApplication(sys.argv)
 from src.gui import Controller
 from src.gui import Window
-
 import os
 import multiprocessing
 
 if __name__ == '__main__':
     multiprocessing.freeze_support()
 
+app = QApplication(sys.argv)
 path = os.path.abspath(__file__)
 path = path.replace(os.sep, '/')
 path = os.path.split(path)[0] + '/'
@@ -48,4 +46,3 @@ window = Window(controller=controller, global_timestamp=global_timestamp, cache_
 del controller
 window.show()
 sys.exit(app.exec_())
-

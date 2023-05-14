@@ -2,7 +2,6 @@ import shutil
 import os
 import sys
 import time
-import cv2
 import numpy as np
 from . import utils
 from .ui_mainwindow import Ui_MainWindow
