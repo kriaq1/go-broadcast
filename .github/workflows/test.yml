@@ -31,4 +31,4 @@ jobs:
 
     - name: run tests
       run: |
-        pytest
+        pytest tests/unittests/ --cov=src/state_recognition --cov-report=html
