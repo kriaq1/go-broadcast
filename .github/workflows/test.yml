@@ -32,3 +32,9 @@ jobs:
     - name: run tests
       run: |
         python -m pytest tests/unittests/ --cov=src/state_recognition
+
+    - name: upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: codecov
+        path: htmlcov/
