@@ -27,7 +27,7 @@ jobs:
     
     - name: run linters
       run: |
-        flake8 ./src --max-line-length=120 --ignore F401 F711
+        flake8 ./src --max-line-length=120 --ignore F401 --ignore F711
     
     - name: run tests
       run: |
